@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS book_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    is_primary BOOLEAN DEFAULT 0,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+);
