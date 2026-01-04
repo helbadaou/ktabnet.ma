@@ -13,7 +13,8 @@ export interface Book {
 
 export interface User {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   avatar: string;
   city: string;
   booksListed: number;

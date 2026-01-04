@@ -24,10 +24,8 @@ func NewProfileHandler(service *services.ProfileService, sessionService *service
 }
 
 func (h *ProfileHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	// Step 1: Get user ID from session token
 	userID, ok := h.sessionService.GetUserIDFromSession(w, r)
 	if !ok {
-		// Clear the session cookie
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    "",
@@ -41,7 +39,6 @@ func (h *ProfileHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Step 2: Fetch user profile
 	user, err := h.profileService.ProfileRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -53,13 +50,11 @@ func (h *ProfileHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Step 3: Return user data
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(user)
 }
 
 func (h *ProfileHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse target user ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/users/")
 	targetID, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -67,21 +62,18 @@ func (h *ProfileHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// 2. Get requester ID from session
 	requesterID, ok := h.sessionService.GetUserIDFromSession(w, r)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// 3. Get user profile via service
 	user, err := h.profileService.GetUserProfile(requesterID, targetID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	// 4. Encode response
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(user)
 }

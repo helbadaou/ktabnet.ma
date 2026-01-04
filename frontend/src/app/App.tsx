@@ -6,7 +6,6 @@ import { BookListings } from './pages/BookListings';
 import { BookDetail } from './pages/BookDetail';
 import { Books } from './pages/Books';
 import { Messages } from './pages/Messages';
-import { ListBook } from './pages/ListBook';
 import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -34,7 +33,7 @@ function AppContent() {
       </main>
       <footer className="border-t py-8 mt-16">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 BookNet.ma. Connecting book lovers across Morocco.</p>
+          <p>&copy; 2024 KtabNet.ma. Connecting book lovers across Morocco.</p>
         </div>
       </footer>
     </div>

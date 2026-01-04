@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"fmt"
+
 	"social/models"
 )
 
@@ -54,6 +55,20 @@ func (r *BookRepository) GetBookByID(bookID int) (models.Book, error) {
 		}
 	}
 	book.Images = images
+	err = r.DB.QueryRow(`
+	SELECT id, first_name, last_name, avatar
+	FROM users
+	WHERE id = ?
+`, book.OwnerID).Scan(
+		&book.Owner.ID,
+		&book.Owner.FirstName,
+		&book.Owner.LastName,
+		&book.Owner.Avatar,
+	)
+	if err != nil {
+		return book, err
+	}
+
 	return book, nil
 }
 

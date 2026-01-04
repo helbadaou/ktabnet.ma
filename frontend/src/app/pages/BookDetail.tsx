@@ -57,8 +57,8 @@ export function BookDetail() {
   useEffect(() => {
     const populateOwner = async () => {
       if (!book) return;
-      if (book.owner && book.owner.name) {
-        setOwnerName(book.owner.name);
+      if (book.owner && book.owner.first_name) {
+        setOwnerName(book.owner.first_name);
         setOwnerCity(book.owner.city || '');
         setOwnerAvatar(book.owner.avatar || '');
         return;
@@ -209,13 +209,13 @@ export function BookDetail() {
                   <>
                     <div className="flex items-center gap-4 mb-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={book.owner?.avatar || ownerAvatar} alt={book.owner?.name || ownerName || 'Owner'} />
+                        <AvatarImage src={book.owner?.avatar || ownerAvatar} alt={book.owner?.first_name || ownerName || 'Owner'} />
                         <AvatarFallback>
                           <User className="h-6 w-6" />
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{book.owner?.name || ownerName}</p>
+                        <p className="font-medium">{book.owner?.first_name + " " + book.owner?.last_name || ownerName}</p>
                         <p className="text-sm text-muted-foreground">{book.owner?.city || ownerCity}</p>
                       </div>
                     </div>
