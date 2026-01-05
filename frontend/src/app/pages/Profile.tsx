@@ -14,13 +14,37 @@ export function Profile() {
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      setLoading(true);
-      // In a real app, you would fetch the current user and their books
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // For now, we'll simulate no user found
-      setCurrentUser(null);
-      setUserBooks([]);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/profile/me`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await res.json();
+
+        const mappedUser = {
+          id: data.Id,
+          first_name: data.FirstName,
+          last_name: data.LastName,
+          name: `${data.Firstname} ${data.Fastname}`,
+          avatar: data.Avatar || "",
+          city: data.City || "Unknown",
+          booksListed: data.booksListed || 0,
+          booksExchanged: data.booksExchanged || 0,
+        };
+        console.log(data.FirstName)
+        setCurrentUser(mappedUser);
+        setUserBooks(data.books || []);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProfileData();
@@ -52,19 +76,21 @@ export function Profile() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+              <AvatarImage src={"http://localhost:8080/"+currentUser.avatar} alt={currentUser.first_name} />
               <AvatarFallback>
                 <User className="h-12 w-12" />
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1">
-              <h1 className="text-3xl mb-2">{currentUser.name}</h1>
+              <h1 className="text-3xl mb-2">
+                {currentUser.first_name} {currentUser.last_name}
+              </h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="h-4 w-4" />
                 <span>{currentUser.city}</span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 max-w-sm">
                 <div>
                   <p className="text-2xl font-semibold">{currentUser.booksListed}</p>
@@ -114,7 +140,6 @@ export function Profile() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* This would also be fetched from an API */}
                 <p className="text-muted-foreground">No exchange history yet.</p>
               </div>
             </CardContent>

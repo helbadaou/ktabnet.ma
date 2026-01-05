@@ -9,6 +9,7 @@ type RegisterRequest struct {
 	Nickname    string `json:"nickname"`
 	About       string `json:"about"`
 	Avatar      string `json:"avatar"`
+	City        string `json:"city"`
 }
 
 type LoginRequest struct {
@@ -26,5 +27,5 @@ type User struct {
 	Nickname    string
 	About       string
 	Avatar      string
-	IsPrivate   bool
+	City        string
 }

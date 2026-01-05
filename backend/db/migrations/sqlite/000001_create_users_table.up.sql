@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS users (
     nickname TEXT,
     about TEXT,
     avatar TEXT,
-    is_private BOOLEAN DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    city TEXT
 );

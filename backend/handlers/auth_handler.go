@@ -44,6 +44,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		DateOfBirth: r.FormValue("date_of_birth"),
 		Nickname:    r.FormValue("nickname"),
 		About:       r.FormValue("about"),
+		City:		 r.FormValue("city"),
 	}
 
 	// Handle avatar upload

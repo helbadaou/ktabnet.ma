@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"social/hub"
-	"social/services"
-	"social/models"
 	"strconv"
 	"strings"
+
+	"social/hub"
+	"social/models"
+	"social/services"
 )
 
 type ProfileHandler struct {
@@ -56,6 +57,23 @@ func (h *ProfileHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) 
 
 func (h *ProfileHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/users/")
+	targetID := 0
+	if idStr == "me" {
+		requesterID, ok := h.sessionService.GetUserIDFromSession(w, r)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		targetID = requesterID
+
+	} else {
+		targeID, err := strconv.Atoi(idStr)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+		targetID = targeID
+	}
 	targetID, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -122,7 +140,7 @@ func (h *ProfileHandler) TogglePrivacy(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request){
+func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	userId, ok := h.sessionService.GetUserIDFromSession(w, r)
 	if !ok {
 		http.Error(w, "Utilisateur non authentifié", http.StatusUnauthorized)
@@ -130,10 +148,9 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request){
 	}
 
 	response := map[string]interface{}{
-        "id": userId,
+		"id": userId,
 	}
 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(response)
-
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

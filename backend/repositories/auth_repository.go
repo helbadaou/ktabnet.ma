@@ -34,8 +34,8 @@ func (r *SqliteUserRepo) FindUserWithPasswordByEmail(email string) (*models.User
 // repository/user_repository.go
 func (r *SqliteUserRepo) CreateUser(user *models.User) error {
 	query := `
-	INSERT INTO users (email, password, first_name, last_name, date_of_birth, nickname, about, avatar)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO users (email, password, first_name, last_name, date_of_birth, nickname, about, avatar, city)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.db.Exec(query,
 		user.Email,
@@ -46,6 +46,7 @@ func (r *SqliteUserRepo) CreateUser(user *models.User) error {
 		user.Nickname,
 		user.About,
 		user.Avatar,
+		user.City,
 	)
 	fmt.Println("Creating user:", err)
 	return err
