@@ -46,7 +46,7 @@ func (s *SessionRepo) ValidateSession(r *http.Request, db *sql.DB) (int, error) 
 
 func (s *SessionRepo) CreateSession(userID int) (string, time.Time, error) {
 	sessionID := uuid.New().String()
-	expiration := time.Now().AddDate(1000, 0, 0)
+	expiration := time.Now().AddDate(0, 1, 0)
 	query := `INSERT INTO sessions (id, userId, expiresAt) VALUES (?, ?, ?)`
 	_, err := s.db.Exec(query, sessionID, userID, expiration)
 	if err != nil {

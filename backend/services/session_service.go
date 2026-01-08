@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"social/db/sqlite"
 	"social/repositories"
+	"social/utils"
 	"time"
 )
 
@@ -20,13 +21,16 @@ func (s *SessionService) GetUserIDFromSession(w http.ResponseWriter, r *http.Req
 	id, err := s.sessionRepo.ValidateSession(r, sqlite.DB)
 	if err != nil {
 		fmt.Println("Error validating session:", err)
+		isSecure, sameSite := utils.SessionCookieSettings(r)
+
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_id",
-			Value:    fmt.Sprintf("%v", "expired"),
+			Value:    "",
 			Path:     "/",
+			MaxAge:   -1,
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-			Secure:   false, // use true if using https
+			SameSite: sameSite,
+			Secure:   isSecure,
 		})
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return 0, false

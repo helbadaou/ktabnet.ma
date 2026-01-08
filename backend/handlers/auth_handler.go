@@ -44,7 +44,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		DateOfBirth: r.FormValue("date_of_birth"),
 		Nickname:    r.FormValue("nickname"),
 		About:       r.FormValue("about"),
-		City:		 r.FormValue("city"),
+		City:        r.FormValue("city"),
 	}
 
 	// Handle avatar upload
@@ -106,6 +106,9 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Determine if connection is HTTPS (check X-Forwarded-Proto for proxied requests)
+	isSecure, sameSite := utils.SessionCookieSettings(r)
+
 	// Set session cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -113,7 +116,8 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Expires:  expiration,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: sameSite,
+		Secure:   isSecure,
 	})
 
 	user.Avatar = utils.PrepareAvatarURL(user.Avatar)
@@ -138,6 +142,9 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to log out", http.StatusInternalServerError)
 		return
 	}
+	// Determine cookie flags
+	isSecure, sameSite := utils.SessionCookieSettings(r)
+
 	// Clear cookie by setting MaxAge to -1
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -145,8 +152,8 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode, // Pour s'assurer que les cookies sont bien envoyés au frontend
-		Secure:   false,
+		SameSite: sameSite,
+		Secure:   isSecure,
 	})
 
 	w.Write([]byte("✅ Logged out successfully"))
