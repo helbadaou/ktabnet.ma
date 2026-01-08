@@ -10,6 +10,7 @@ import { AuthContext } from '../context/AuthContext';
 import { BookCard } from '../components/BookCard';
 import { Book } from '../data/mockData';
 import BookDetailModal from '../components/BookDetailModal';
+import { apiUrl } from '../config';
 
 export function Books() {
   const authContext = useContext(AuthContext);
@@ -40,7 +41,7 @@ export function Books() {
     if (!currentUser) return;
     setLoadingFeed(true);
     try {
-      const res = await fetch('/api/books', { credentials: 'include' });
+      const res = await fetch(apiUrl('/api/books'), { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         const mappedBooks = (data || []).map((book: any) => ({
@@ -70,7 +71,7 @@ export function Books() {
     if (!currentUser) return;
     setLoadingMyBooks(true);
     try {
-      const res = await fetch('/api/my-books', { credentials: 'include' });
+      const res = await fetch(apiUrl('/api/my-books'), { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         const mappedBooks = (data || []).map((book: any) => ({
@@ -114,7 +115,7 @@ export function Books() {
     images.forEach((img) => form.append('images', img));
 
     try {
-      const res = await fetch('/api/books', {
+      const res = await fetch(apiUrl('/api/books'), {
         method: 'POST',
         credentials: 'include',
         body: form,
@@ -181,7 +182,7 @@ export function Books() {
         <TabsContent value="my-books" className="mt-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">My Books</h2>
-            <Button onClick={() => { setShowAddForm(true); fetchMyBooks(); }}>
+            <Button onClick={() => setShowAddForm(true)}>
               <Plus className="w-4 h-4 mr-2" /> Add Book
             </Button>
           </div>

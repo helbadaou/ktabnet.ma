@@ -5,26 +5,53 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { BookCard } from '../components/BookCard';
 import { Book } from '../data/mockData';
+import { apiUrl } from '../config';
 
 export function HomePage() {
+  const FEATURED_LIMIT = 10;
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBooks = async () => {
-      setLoading(true); 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setFeaturedBooks([]); // No mock data available
-      setLoading(false);
+      setLoading(true);
+      try {
+        const res = await fetch(apiUrl('/api/books'), { credentials: 'include' });
+        if (!res.ok) {
+          setFeaturedBooks([]);
+          return;
+        }
+        const data = await res.json();
+        const mapped = (data || []).map((book: any) => ({
+          ...book,
+          id: String(book.id),
+          imageUrl: book.images?.[0] || '/placeholder-book.png',
+          owner: {
+            name: `${book.owner_first_name || ''} ${book.owner_last_name || ''}`.trim() || 'Unknown User',
+            avatar: book.owner_avatar || '/default-avatar.png',
+            id: String(book.owner_id),
+            city: book.owner_city || 'Unknown',
+            booksListed: 0,
+            booksExchanged: 0,
+          },
+          location: book.owner_city || 'Unknown Location',
+        }));
+        setFeaturedBooks(mapped);
+      } catch (err) {
+        console.error('Error fetching featured books:', err);
+        setFeaturedBooks([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchBooks();
   }, []);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col items-center w-full">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/10 via-background to-background flex items-center min-h-[60vh]">
+      <section className="relative bg-gradient-to-b from-primary/10 to-background min-h-[60vh] w-full">
         <div className="container py-24 md:py-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6">
@@ -53,11 +80,11 @@ export function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="container py-16">
+      <section className="container py-16 text-center">
         <h2 className="text-3xl text-center mb-12">How It Works</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card>
-            <CardContent className="pt-6">
+        <div className="grid md:grid-cols-3 gap-8 place-items-center">
+          <Card className="w-full max-w-sm">
+            <CardContent className="pt-6 text-center">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
@@ -68,8 +95,8 @@ export function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="w-full max-w-sm">
+            <CardContent className="pt-6 text-center">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <Search className="h-6 w-6 text-primary" />
               </div>
@@ -80,8 +107,8 @@ export function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="w-full max-w-sm">
+            <CardContent className="pt-6 text-center">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <RefreshCw className="h-6 w-6 text-primary" />
               </div>
@@ -91,39 +118,6 @@ export function HomePage() {
               </p>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Featured Books */}
-      <section className="container py-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl">Featured Books</h2>
-          <Button asChild variant="ghost">
-            <Link to="/books">View All</Link>
-          </Button>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-            <p>Loading...</p>
-          ) : (
-            featuredBooks.map((book) => <BookCard key={book.id} book={book} />)
-          )}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-muted py-16">
-        <div className="container text-center">
-          <h2 className="text-3xl mb-4">Ready to Start Exchanging?</h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join BookNet.ma today and become part of Morocco's growing book-loving community.
-          </p>
-          <Button asChild size="lg">
-            <Link to="/list-book">
-              <BookOpen className="mr-2 h-5 w-5" />
-              List Your First Book
-            </Link>
-          </Button>
         </div>
       </section>
     </div>

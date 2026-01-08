@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
 import { Book } from '../data/mockData';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { apiUrl, absoluteUrl } from '../config';
 
 type ApiBook = Book & {
   images?: string[];
@@ -33,7 +34,7 @@ export function BookDetail() {
     const fetchBook = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/books/${id}`);
+        const response = await fetch(apiUrl(`/api/books/${id}`), { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setBook(data);
@@ -57,24 +58,12 @@ export function BookDetail() {
   useEffect(() => {
     const populateOwner = async () => {
       if (!book) return;
-      if (book.owner && book.owner.first_name) {
-        setOwnerName(book.owner.first_name);
-        setOwnerCity(book.owner.city || '');
-        setOwnerAvatar(book.owner.avatar || '');
-        return;
-      }
-      if (!book.owner_id) return;
-      try {
-        const res = await fetch(`http://localhost:8080/api/users/${book.owner_id}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const full = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
-        if (full) setOwnerName(full);
-        if (data.city) setOwnerCity(data.city);
-        if (data.avatar) setOwnerAvatar(data.avatar);
-      } catch (err) {
-        console.error('Failed to fetch owner profile', err);
-      }
+      if (!book.owner) return;
+
+      const full = [book.owner.first_name, book.owner.last_name].filter(Boolean).join(' ').trim();
+      if (full) setOwnerName(full);
+      setOwnerCity(book.owner.city || '');
+      setOwnerAvatar(book.owner.avatar || '');
     };
     populateOwner();
   }, [book]);
@@ -98,10 +87,7 @@ export function BookDetail() {
     );
   }
 
-  const toAbsolute = (path: string) =>
-    path.startsWith('http://') || path.startsWith('https://')
-      ? path
-      : `http://localhost:8080${path}`;
+  const toAbsolute = (path: string) => absoluteUrl(path);
 
   const images = book.images && book.images.length > 0
     ? book.images

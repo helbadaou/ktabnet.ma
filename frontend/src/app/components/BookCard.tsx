@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Book } from '../data/mockData';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { absoluteUrl } from '../config';
 
 interface BookCardProps {
   book: Book;
@@ -16,7 +17,7 @@ export function BookCard({ book }: BookCardProps) {
       <Card className="overflow-hidden transition-all hover:shadow-lg cursor-pointer h-full">
         <div className="aspect-[3/4] overflow-hidden relative">
           <ImageWithFallback
-            src={`http://localhost:8080${book.imageUrl}`}
+            src={absoluteUrl(book.imageUrl)}
             alt={book.title}
             className="w-full h-full object-cover transition-transform hover:scale-105"
           />

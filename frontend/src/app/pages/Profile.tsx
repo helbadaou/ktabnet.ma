@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Book, User as UserType } from '../data/mockData';
 import { BookCard } from '../components/BookCard';
+import { apiUrl, absoluteUrl } from '../config';
 
 export function Profile() {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
@@ -16,7 +17,7 @@ export function Profile() {
     const fetchProfileData = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/profile/me`, {
+        const res = await fetch(apiUrl(`/api/profile/me`), {
           credentials: "include",
         });
 
@@ -76,7 +77,7 @@ export function Profile() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={"http://localhost:8080/"+currentUser.avatar} alt={currentUser.first_name} />
+              <AvatarImage src={absoluteUrl(currentUser.avatar)} alt={currentUser.first_name} />
               <AvatarFallback>
                 <User className="h-12 w-12" />
               </AvatarFallback>

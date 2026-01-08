@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
+import { apiUrl } from '../config';
 
 export function Register() {
   const [firstName, setFirstName] = useState('');
@@ -96,7 +97,7 @@ export function Register() {
         formData.append('avatar', avatar);
       }
 
-      const response = await fetch('/api/register', {
+      const response = await fetch(apiUrl('/api/register'), {
         method: 'POST',
         body: formData,
       });

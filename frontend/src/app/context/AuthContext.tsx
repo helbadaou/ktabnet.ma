@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { apiUrl } from '../config';
 
 interface User {
   ID: string;
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkSession = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        const response = await fetch(apiUrl('/api/auth/me'), { credentials: 'include' });
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: User) => setUser(userData);
   const logout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      await fetch(apiUrl('/api/logout'), { method: 'POST', credentials: 'include' });
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);

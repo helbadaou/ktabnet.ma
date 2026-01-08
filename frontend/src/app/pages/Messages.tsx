@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Separator } from '../components/ui/separator';
 import { AuthContext } from '../context/AuthContext';
+import { apiUrl, wsUrl } from '../config';
 
 // Define a message type with an `isMine` property for display purposes
 interface Message {
@@ -37,9 +38,7 @@ export function Messages() {
   useEffect(() => {
     if (selectedUser && currentUser) {
       console.log('Attempting to connect to WebSocket...');
-      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const host = window.location.hostname + ':8080';
-      const socket = new WebSocket(`${protocol}://${host}/ws`);
+      const socket = new WebSocket(wsUrl('/ws'));
       console.log('WebSocket created for user:', currentUser.ID);
       setWs(socket);
 
@@ -92,7 +91,7 @@ export function Messages() {
       setLoadingMessages(true);
       setMessages([]);
       try {
-        const response = await fetch(`/api/chat/history?with=${userId}`, { credentials: 'include' });
+        const response = await fetch(apiUrl(`/api/chat/history?with=${userId}`), { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           const formattedMessages = (data || []).map((msg: any) => ({
@@ -122,7 +121,7 @@ export function Messages() {
       if (!currentUser) return;
       setLoadingConversations(true);
       try {
-        const res = await fetch(`/api/users-following/${currentUser.ID}`, { credentials: 'include' });
+        const res = await fetch(apiUrl(`/api/users-following/${currentUser.ID}`), { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           const users = (data || []).map((u: any) => ({

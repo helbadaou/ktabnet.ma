@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from './components/ui/sonner';
 import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
-import { BookListings } from './pages/BookListings';
 import { BookDetail } from './pages/BookDetail';
 import { Books } from './pages/Books';
 import { Messages } from './pages/Messages';
@@ -31,7 +30,7 @@ function AppContent() {
           </Route>
         </Routes>
       </main>
-      <footer className="border-t py-8 mt-16">
+      <footer className="border-t py-8 mt-16 bg-background flex items-center justify-center">
         <div className="container text-center text-sm text-muted-foreground">
           <p>&copy; 2024 KtabNet.ma. Connecting book lovers across Morocco.</p>
         </div>
