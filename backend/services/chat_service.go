@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+
 	"social/models"
 	"social/repositories"
 )
@@ -18,9 +19,11 @@ func NewChatService(repo *repositories.ChatRepository) *ChatService {
 func (s *ChatService) GetAllChatUsers(requesterID int) ([]models.ChatUser, error) {
 	return s.Repo.GetAllUsers(requesterID)
 }
-func (s *ChatService) CanChat(userID, otherID int) (bool, error){
+
+func (s *ChatService) CanChat(userID, otherID int) (bool, error) {
 	return s.Repo.CanUsersChat(userID, otherID)
 }
+
 func (s *ChatService) GetChatHistory(userID, otherID int) ([]models.Message, error) {
 	canChat, err := s.Repo.CanUsersChat(userID, otherID)
 	if err != nil {
@@ -38,14 +41,19 @@ func (s *ChatService) ProcessPrivateMessage(msg models.Message) error {
 	if err != nil || !hasAccess {
 		return err
 	}
-	
+
+	// First message: make sure pair is allow-listed for future checks
+	if err := s.Repo.EnsureChatPermission(msg.From, msg.To); err != nil {
+		return err
+	}
+
 	// Save message
 	return s.Repo.SavePrivateMessage(msg)
 }
 
 func (s *ChatService) ProcessGroupMessage(msg models.Message) error {
 	// Validate group membership would go here
-	
+
 	// Save message
 	return s.Repo.SaveGroupMessage(msg)
 }

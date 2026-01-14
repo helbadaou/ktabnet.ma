@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"social/services"
 	"strconv"
@@ -29,6 +30,7 @@ func (h *ChatHandler) GetAllChatUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := h.Service.GetAllChatUsers(requesterID)
 	if err != nil {
+		fmt.Println("hhhhh",err)
 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
 		return
 	}

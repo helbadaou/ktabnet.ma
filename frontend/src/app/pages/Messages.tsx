@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Send, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
@@ -26,6 +27,7 @@ interface User {
 export function Messages() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
+  const location = useLocation();
   const [conversations, setConversations] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -34,6 +36,20 @@ export function Messages() {
   const [newMessage, setNewMessage] = useState('');
   const [ws, setWs] = useState<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Handle navigation state from BookDetail page
+  useEffect(() => {
+    if (location.state?.selectedUserId) {
+      const userFromState: User = {
+        id: String(location.state.selectedUserId),
+        fullName: location.state.selectedUserName || 'Book Owner',
+        avatar: location.state.selectedUserAvatar || '',
+      };
+      setSelectedUser(userFromState);
+      // Clear the state to prevent re-selecting on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (selectedUser && currentUser) {
@@ -121,13 +137,13 @@ export function Messages() {
       if (!currentUser) return;
       setLoadingConversations(true);
       try {
-        const res = await fetch(apiUrl(`/api/users-following/${currentUser.ID}`), { credentials: 'include' });
+        const res = await fetch(apiUrl('/api/chat-users'), { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           const users = (data || []).map((u: any) => ({
-            id: String(u.ID || u.id),
-            fullName: u.Nickname || u.nickname || `${u.FirstName || u.first_name || ''} ${u.LastName || u.last_name || ''}`.trim(),
-            avatar: u.Avatar || u.avatar,
+            id: String(u.id ?? u.ID),
+            fullName: u.full_name || u.FullName || `${u.first_name || u.FirstName || ''} ${u.last_name || u.LastName || ''}`.trim(),
+            avatar: u.avatar || u.Avatar || '',
           }));
           setConversations(users);
         } else {

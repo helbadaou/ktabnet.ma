@@ -222,7 +222,15 @@ export function BookDetail() {
                 {book.available && (
                   <Button
                     className="w-full"
-                    onClick={() => navigate('/messages')}
+                    onClick={() => navigate('/messages', { 
+                      state: { 
+                        selectedUserId: book.owner_id || book.owner?.id,
+                        selectedUserName: ownerName || (book.owner?.first_name + " " + book.owner?.last_name),
+                        selectedUserAvatar: ownerAvatar || book.owner?.avatar,
+                        bookId: book.id,
+                        bookTitle: book.title
+                      } 
+                    })}
                   >
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Message Owner

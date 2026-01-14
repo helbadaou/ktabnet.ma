@@ -51,7 +51,7 @@ func (c *Client) readPump(hub *Hub) {
 		}
 
 		if msg.Type == "private" {
-			if msg.From == 0 || msg.To == 0 || msg.Content == "" {
+			if msg.To == 0 || msg.Content == "" {
 				log.Printf("Missing required private message fields")
 				continue
 			}
