@@ -98,7 +98,7 @@ export function BookDetail() {
 
   return (
     <>
-      <div className="container py-8">
+      <div className="container mx-auto py-8">
         <Button
           variant="ghost"
           onClick={() => navigate('/books')}

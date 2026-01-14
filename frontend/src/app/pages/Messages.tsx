@@ -172,8 +172,8 @@ export function Messages() {
   }
 
   return (
-    <div className="w-full py-8 flex justify-center">
-      <div className="w-full max-w-6xl px-4">
+    <div className="w-full py-8 flex justify-center mx-auto">
+      <div className="w-full max-w-6xl px-4 mx-auto">
         <h1 className="text-4xl mb-6">Messages</h1>
 
         <div className="grid md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">

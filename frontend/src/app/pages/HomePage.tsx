@@ -49,10 +49,10 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full mx-auto">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-primary/10 to-background min-h-[60vh] w-full">
-        <div className="container py-24 md:py-32">
+        <div className="container mx-auto py-24 md:py-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6">
               Share Books, Build Community
@@ -68,19 +68,13 @@ export function HomePage() {
                   Browse Books
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/list-book">
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  List a Book
-                </Link>
-              </Button>
             </div>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="container py-16 text-center">
+      <section className="container mx-auto py-16 text-center">
         <h2 className="text-3xl text-center mb-12">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-8 place-items-center">
           <Card className="w-full max-w-sm">

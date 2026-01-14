@@ -124,7 +124,7 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 mx-auto">
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>Register</CardTitle>

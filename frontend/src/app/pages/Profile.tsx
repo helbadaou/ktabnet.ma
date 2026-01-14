@@ -71,7 +71,7 @@ export function Profile() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container mx-auto py-8">
       {/* Profile Header */}
       <Card className="mb-8">
         <CardContent className="pt-6">

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useContext } from 'react';
 import { Plus } from 'lucide-react';
-import { Card, CardHeader } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -142,7 +141,7 @@ export function Books() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container mx-auto py-8">
       <h1 className="text-4xl mb-6">Books</h1>
 
       <Tabs
