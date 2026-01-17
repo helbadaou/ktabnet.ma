@@ -1,0 +1,13 @@
+# Frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+
+# Backend build artifacts
+backend/tmp/
+
+# Database files
+*.db
+
+# Environment files
+.env
+.env.local

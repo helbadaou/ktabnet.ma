@@ -6,6 +6,7 @@ import (
 	"social/db/sqlite"
 	"social/repositories"
 	"social/utils"
+	"strings"
 	"time"
 )
 
@@ -18,6 +19,20 @@ func NewSessionService(sessionRepo *repositories.SessionRepo) *SessionService {
 }
 
 func (s *SessionService) GetUserIDFromSession(w http.ResponseWriter, r *http.Request) (int, bool) {
+	// First, try to get user ID from JWT token in Authorization header
+	authHeader := r.Header.Get("Authorization")
+	if authHeader != "" {
+		parts := strings.Split(authHeader, " ")
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			claims, err := utils.ValidateJWT(parts[1])
+			if err == nil {
+				return claims.UserID, true
+			}
+			fmt.Println("JWT validation failed, falling back to session cookie:", err)
+		}
+	}
+
+	// Fall back to session cookie authentication
 	id, err := s.sessionRepo.ValidateSession(r, sqlite.DB)
 	if err != nil {
 		fmt.Println("Error validating session:", err)

@@ -9,7 +9,7 @@ import { AuthContext } from '../context/AuthContext';
 import { BookCard } from '../components/BookCard';
 import { Book } from '../data/mockData';
 import BookDetailModal from '../components/BookDetailModal';
-import { apiUrl } from '../config';
+import { authenticatedFetch } from '../utils/api';
 
 export function Books() {
   const authContext = useContext(AuthContext);
@@ -40,7 +40,7 @@ export function Books() {
     if (!currentUser) return;
     setLoadingFeed(true);
     try {
-      const res = await fetch(apiUrl('/api/books'), { credentials: 'include' });
+      const res = await authenticatedFetch('/api/books');
       if (res.ok) {
         const data = await res.json();
         const mappedBooks = (data || []).map((book: any) => ({
@@ -70,7 +70,7 @@ export function Books() {
     if (!currentUser) return;
     setLoadingMyBooks(true);
     try {
-      const res = await fetch(apiUrl('/api/my-books'), { credentials: 'include' });
+      const res = await authenticatedFetch('/api/my-books');
       if (res.ok) {
         const data = await res.json();
         const mappedBooks = (data || []).map((book: any) => ({
@@ -114,9 +114,8 @@ export function Books() {
     images.forEach((img) => form.append('images', img));
 
     try {
-      const res = await fetch(apiUrl('/api/books'), {
+      const res = await authenticatedFetch('/api/books', {
         method: 'POST',
-        credentials: 'include',
         body: form,
       });
       if (res.ok) {
