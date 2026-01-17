@@ -33,7 +33,7 @@ export function Login() {
           // New format with JWT
           login(data.user, data.token);
         } else {
-          // Old format (direct user object)
+          // Old format (direct user object) - pass empty string to indicate no JWT
           login(data, '');
         }
         navigate('/');

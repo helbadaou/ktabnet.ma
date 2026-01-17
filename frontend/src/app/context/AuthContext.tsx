@@ -73,7 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: User, jwtToken: string) => {
     setUser(userData);
     setToken(jwtToken);
-    localStorage.setItem('jwt_token', jwtToken);
+    // Only store token in localStorage if it's not empty
+    if (jwtToken) {
+      localStorage.setItem('jwt_token', jwtToken);
+    }
   };
 
   const logout = async () => {

@@ -2,20 +2,26 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWT secret key - in production, this should come from environment variable
+// JWT secret key - MUST be set via JWT_SECRET environment variable
 var jwtSecret = []byte(getJWTSecret())
 
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		// Default secret for development - should be overridden in production
-		return "your-secret-key-change-this-in-production"
+		// Warn but use a default for development
+		log.Println("⚠️  WARNING: JWT_SECRET environment variable not set. Using default secret for development only.")
+		log.Println("⚠️  For production, set JWT_SECRET environment variable to a strong random string (at least 32 characters)")
+		return "default-dev-secret-change-in-production-min-32-chars"
+	}
+	if len(secret) < 32 {
+		log.Println("⚠️  WARNING: JWT_SECRET should be at least 32 characters for security")
 	}
 	return secret
 }
@@ -28,8 +34,9 @@ type Claims struct {
 }
 
 // GenerateJWT creates a new JWT token for a user
+// Token expires after 7 days for better security
 func GenerateJWT(userID int, email string) (string, error) {
-	expirationTime := time.Now().Add(30 * 24 * time.Hour) // 30 days
+	expirationTime := time.Now().Add(7 * 24 * time.Hour) // 7 days
 
 	claims := &Claims{
 		UserID: userID,
