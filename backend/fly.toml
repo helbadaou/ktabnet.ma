@@ -17,6 +17,6 @@ primary_region = 'cdg'
   processes = ['app']
 
 [[vm]]
-  memory = '2gb'
+  memory = '6gb'
   cpus = 8
-  memory_mb = 2048
+  memory_mb = 6144

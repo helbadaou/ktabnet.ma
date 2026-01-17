@@ -10,12 +10,12 @@ import (
 )
 
 type Hub struct {
-	Clients    map[int]*Client
-	Register   chan *Client
-	Unregister chan *Client
-	Broadcast  chan models.Message
-	services   *Handler
-	groupMembersCache map[int][]int 
+	Clients           map[int]*Client
+	Register          chan *Client
+	Unregister        chan *Client
+	Broadcast         chan models.Message
+	services          *Handler
+	groupMembersCache map[int][]int
 	cacheMutex        sync.RWMutex
 	messageService    *services.ChatService
 }
@@ -32,9 +32,7 @@ func NewHub(messageService *services.ChatService) *Hub {
 }
 
 func (h *Hub) Run() {
-
 	for {
-
 		select {
 
 		case client := <-h.Register:
@@ -42,8 +40,6 @@ func (h *Hub) Run() {
 			h.Clients[client.ID] = client
 
 			fmt.Println("✅ Registered user", client.ID)
-
-
 
 		case client := <-h.Unregister:
 
@@ -53,14 +49,11 @@ func (h *Hub) Run() {
 
 			fmt.Println("❌ Unregistered user", client.ID)
 
-
-
 		case msg := <-h.Broadcast:
 
 			fmt.Printf("📢 Broadcasting message: %+v\n", msg)
 
 			msgBytes, err := json.Marshal(msg)
-
 			if err != nil {
 
 				fmt.Println("❌ Failed to marshal message:", err)
@@ -68,8 +61,6 @@ func (h *Hub) Run() {
 				continue
 
 			}
-
-
 
 			switch msg.Type {
 
@@ -83,12 +74,8 @@ func (h *Hub) Run() {
 
 				}
 
-
-
-				// Send to recipient
-
+				// Send to recipient (skip duplicate send when from == to)
 				if recipient, ok := h.Clients[msg.To]; ok {
-
 					select {
 
 					case recipient.Send <- msgBytes:
@@ -97,37 +84,27 @@ func (h *Hub) Run() {
 
 					default:
 
-						close(recipient.Send)
-
 						delete(h.Clients, recipient.ID)
 
 					}
-
 				}
 
+				// Send to sender (only if different channel or not found above)
+				if msg.From != msg.To {
+					if sender, ok := h.Clients[msg.From]; ok {
+						select {
 
+						case sender.Send <- msgBytes:
 
-				// Send to sender
+							fmt.Printf("✅ Private message sent to user %d\n", msg.From)
 
-				if sender, ok := h.Clients[msg.From]; ok {
+						default:
 
-					select {
+							delete(h.Clients, sender.ID)
 
-					case sender.Send <- msgBytes:
-
-						fmt.Printf("✅ Private message sent to user %d\n", msg.From)
-
-					default:
-
-						close(sender.Send)
-
-						delete(h.Clients, sender.ID)
-
+						}
 					}
-
 				}
-
-
 
 			default:
 
@@ -136,12 +113,8 @@ func (h *Hub) Run() {
 			}
 
 		}
-
 	}
-
 }
-
-
 
 func (h *Hub) SendNotification(notification models.Notification, toID int) {
 	msgBytes, _ := json.Marshal(notification)
@@ -169,5 +142,3 @@ func (h *Hub) SendMessageToUser(userID int, message models.Message) {
 		fmt.Printf("⚠️ User %d not connected\n", userID)
 	}
 }
-
-
