@@ -100,6 +100,14 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate JWT token
+	token, err := utils.GenerateJWT(user.ID, user.Email)
+	if err != nil {
+		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		return
+	}
+
+	// Still create session for backwards compatibility (WebSocket, etc.)
 	sessionID, expiration, err := h.sessionService.CreateSession(user.ID)
 	if err != nil {
 		http.Error(w, "Could not create session", http.StatusInternalServerError)
@@ -109,7 +117,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Determine if connection is HTTPS (check X-Forwarded-Proto for proxied requests)
 	isSecure, sameSite := utils.SessionCookieSettings(r)
 
-	// Set session cookie
+	// Set session cookie for backwards compatibility
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionID,
@@ -122,8 +130,14 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	user.Avatar = utils.PrepareAvatarURL(user.Avatar)
 
+	// Return user data with JWT token
+	response := models.LoginResponse{
+		User:  *user,
+		Token: token,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {

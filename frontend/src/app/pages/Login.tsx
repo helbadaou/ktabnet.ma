@@ -27,8 +27,15 @@ export function Login() {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        login(userData);
+        const data = await response.json();
+        // Handle both new JWT response format and old format for backwards compatibility
+        if (data.token && data.user) {
+          // New format with JWT
+          login(data.user, data.token);
+        } else {
+          // Old format (direct user object)
+          login(data, '');
+        }
         navigate('/');
         toast.success('Login successful');
       } else {
