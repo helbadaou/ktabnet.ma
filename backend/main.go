@@ -70,41 +70,41 @@ func main() {
 	mux.HandleFunc("/api/logout", authHandler.LogoutHandler)
 
 	// User profile routes
-	mux.HandleFunc("/api/profile/", profileHandler.ProfileHandler)
-	mux.HandleFunc("/api/users/", profileHandler.GetUserByIDHandler)
-	mux.HandleFunc("/api/search", profileHandler.SearchUsers)
-	mux.HandleFunc("/api/user/toggle-privacy", profileHandler.TogglePrivacy)
-	mux.HandleFunc("/api/auth/me", profileHandler.GetMe)
+	mux.Handle("/api/profile/", sessionService.Middleware(http.HandlerFunc(profileHandler.ProfileHandler)))
+	mux.Handle("/api/users/", sessionService.Middleware(http.HandlerFunc(profileHandler.GetUserByIDHandler)))
+	mux.Handle("/api/search", sessionService.Middleware(http.HandlerFunc(profileHandler.SearchUsers)))
+	mux.Handle("/api/user/toggle-privacy", sessionService.Middleware(http.HandlerFunc(profileHandler.TogglePrivacy)))
+	mux.Handle("/api/auth/me", sessionService.Middleware(http.HandlerFunc(profileHandler.GetMe)))
 
 	// Post routes
-	mux.Handle("/api/posts", utils.CorsMiddleware(http.HandlerFunc(postHandler.PostsHandler)))
-	mux.HandleFunc("/api/user-posts/", postHandler.GetUserPostsHandler)
-	mux.HandleFunc("/api/comments", postHandler.CreateCommentHandler)
-	mux.HandleFunc("/api/comments/post", postHandler.GetCommentsByPostHandler)
+	mux.Handle("/api/posts", sessionService.Middleware(http.HandlerFunc(postHandler.PostsHandler)))
+	mux.Handle("/api/user-posts/", sessionService.Middleware(http.HandlerFunc(postHandler.GetUserPostsHandler)))
+	mux.Handle("/api/comments", sessionService.Middleware(http.HandlerFunc(postHandler.CreateCommentHandler)))
+	mux.Handle("/api/comments/post", sessionService.Middleware(http.HandlerFunc(postHandler.GetCommentsByPostHandler)))
 
 	// Follow routes
-	mux.HandleFunc("/api/follow", followHandler.SendFollowRequest)
-	mux.HandleFunc("/api/follow/status/", followHandler.GetFollowStatus)
-	mux.HandleFunc("/api/follow/accept", followHandler.AcceptFollow)
-	mux.HandleFunc("/api/follow/reject", followHandler.RejectFollow)
-	mux.HandleFunc("/api/unfollow", followHandler.UnfollowUser)
-	mux.HandleFunc("/api/users-followers/", followHandler.GetFollowersHandler)
-	mux.HandleFunc("/api/users-following/", followHandler.GetFollowingHandler)
-	mux.HandleFunc("/api/recipients", followHandler.GetRecipientsHandler)
+	mux.Handle("/api/follow", sessionService.Middleware(http.HandlerFunc(followHandler.SendFollowRequest)))
+	mux.Handle("/api/follow/status/", sessionService.Middleware(http.HandlerFunc(followHandler.GetFollowStatus)))
+	mux.Handle("/api/follow/accept", sessionService.Middleware(http.HandlerFunc(followHandler.AcceptFollow)))
+	mux.Handle("/api/follow/reject", sessionService.Middleware(http.HandlerFunc(followHandler.RejectFollow)))
+	mux.Handle("/api/unfollow", sessionService.Middleware(http.HandlerFunc(followHandler.UnfollowUser)))
+	mux.Handle("/api/users-followers/", sessionService.Middleware(http.HandlerFunc(followHandler.GetFollowersHandler)))
+	mux.Handle("/api/users-following/", sessionService.Middleware(http.HandlerFunc(followHandler.GetFollowingHandler)))
+	mux.Handle("/api/recipients", sessionService.Middleware(http.HandlerFunc(followHandler.GetRecipientsHandler)))
 
 	// Chat routes
-	mux.HandleFunc("/api/chat-users", chatHandler.GetAllChatUsers)
-	mux.HandleFunc("/api/chat/history", chatHandler.GetChatHistory)
+	mux.Handle("/api/chat-users", sessionService.Middleware(http.HandlerFunc(chatHandler.GetAllChatUsers)))
+	mux.Handle("/api/chat/history", sessionService.Middleware(http.HandlerFunc(chatHandler.GetChatHistory)))
 
 	// Notification routes
-	mux.HandleFunc("/api/notifications", notifHandler.GetUserNotifications)
-	mux.HandleFunc("/api/notifications/seen", notifHandler.MarkNotificationSeen)
-	mux.HandleFunc("/api/notifications/delete", notifHandler.DeleteNotification)
+	mux.Handle("/api/notifications", sessionService.Middleware(http.HandlerFunc(notifHandler.GetUserNotifications)))
+	mux.Handle("/api/notifications/seen", sessionService.Middleware(http.HandlerFunc(notifHandler.MarkNotificationSeen)))
+	mux.Handle("/api/notifications/delete", sessionService.Middleware(http.HandlerFunc(notifHandler.DeleteNotification)))
 
 	// Book routes
-	mux.HandleFunc("/api/books", bookHandler.BooksHandler)
-	mux.HandleFunc("/api/books/", bookHandler.GetBookHandler)
-	mux.HandleFunc("/api/my-books", bookHandler.GetMyBooksHandler)
+	mux.Handle("/api/books", sessionService.Middleware(http.HandlerFunc(bookHandler.BooksHandler)))
+	mux.Handle("/api/books/", sessionService.Middleware(http.HandlerFunc(bookHandler.GetBookHandler)))
+	mux.Handle("/api/my-books", sessionService.Middleware(http.HandlerFunc(bookHandler.GetMyBooksHandler)))
 
 	// Group routes
 

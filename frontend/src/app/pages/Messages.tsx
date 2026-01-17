@@ -9,6 +9,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { Separator } from '../components/ui/separator';
 import { AuthContext } from '../context/AuthContext';
 import { apiUrl, wsUrl } from '../config';
+import { authFetch } from '../utils/api';
 
 // Define a message type with an `isMine` property for display purposes
 interface Message {
@@ -55,7 +56,7 @@ export function Messages() {
     if (selectedUser && currentUser) {
       console.log('Attempting to connect to WebSocket...');
       const socket = new WebSocket(wsUrl('/ws'));
-      console.log('WebSocket created for user:', currentUser.ID);
+      console.log('WebSocket created for user:', currentUser.id);
       setWs(socket);
 
       socket.onopen = () => {
@@ -65,7 +66,7 @@ export function Messages() {
       socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          const isMine = String(message.from) === String(currentUser.ID);
+          const isMine = String(message.from) === String(currentUser.id);
           const id = message.id || `${message.timestamp}-${Math.random().toString(36).slice(2, 8)}`;
           setMessages((prevMessages) => [
             ...prevMessages,
@@ -107,14 +108,14 @@ export function Messages() {
       setLoadingMessages(true);
       setMessages([]);
       try {
-        const response = await fetch(apiUrl(`/api/chat/history?with=${userId}`), { credentials: 'include' });
+        const response = await authFetch(apiUrl(`/api/chat/history?with=${userId}`));
         if (response.ok) {
           const data = await response.json();
           const formattedMessages = (data || []).map((msg: any) => ({
             id: `${msg.timestamp}-${Math.random().toString(36).slice(2, 8)}`,
             content: msg.content,
             timestamp: new Date(msg.timestamp),
-            isMine: String(msg.from) === String(currentUser?.ID),
+            isMine: String(msg.from) === String(currentUser?.id),
           }));
           setMessages(formattedMessages);
         } else {
@@ -137,7 +138,7 @@ export function Messages() {
       if (!currentUser) return;
       setLoadingConversations(true);
       try {
-        const res = await fetch(apiUrl('/api/chat-users'), { credentials: 'include' });
+        const res = await authFetch(apiUrl('/api/chat-users'));
         if (res.ok) {
           const data = await res.json();
           const users = (data || []).map((u: any) => ({
@@ -161,7 +162,7 @@ export function Messages() {
 
   const handleSend = () => {
     if (newMessage.trim() && selectedUser && ws && currentUser) {
-      const fromId = parseInt(currentUser.ID);
+      const fromId = parseInt(String(currentUser.id));
       const payload = {
         type: 'private',
         from: fromId,

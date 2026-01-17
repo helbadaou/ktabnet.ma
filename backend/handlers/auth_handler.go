@@ -6,17 +6,31 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"social/db/sqlite"
 	"social/hub"
 	"social/models"
 	"social/services"
 	"social/utils"
+	"time"
 )
 
 type Handler struct {
 	authService    *services.AuthService
 	sessionService *services.SessionService
 	Hub            *hub.Hub
+}
+
+type loginResponse struct {
+	Token     string       `json:"token"`
+	ExpiresAt time.Time    `json:"expires_at"`
+	User      responseUser `json:"user"`
+}
+
+type responseUser struct {
+	ID        int    `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"avatar"`
 }
 
 func NewHandler(service *services.AuthService, sessionService *services.SessionService, hub *hub.Hub) *Handler {
@@ -100,52 +114,36 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, expiration, err := h.sessionService.CreateSession(user.ID)
+	token, expiration, err := h.sessionService.CreateSession(user.ID)
 	if err != nil {
-		http.Error(w, "Could not create session", http.StatusInternalServerError)
+		http.Error(w, "Could not create token", http.StatusInternalServerError)
 		return
 	}
 
-	// Determine if connection is HTTPS (check X-Forwarded-Proto for proxied requests)
-	isSecure, sameSite := utils.SessionCookieSettings(r)
-
-	// Set session cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    sessionID,
-		Expires:  expiration,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: sameSite,
-		Secure:   isSecure,
-	})
-
 	user.Avatar = utils.PrepareAvatarURL(user.Avatar)
+	resp := loginResponse{
+		Token:     token,
+		ExpiresAt: expiration,
+		User: responseUser{
+			ID:        user.ID,
+			Email:     user.Email,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Avatar:    user.Avatar,
+		},
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	db := sqlite.DB
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		http.Error(w, "No session cookie found", http.StatusUnauthorized)
-		return
-	}
-	_, err = db.Exec(`DELETE FROM sessions WHERE id = ?`, cookie.Value)
-	if err != nil {
-		http.Error(w, "Failed to log out", http.StatusInternalServerError)
-		return
-	}
-	// Determine cookie flags
+	// Clear legacy session cookie if present
 	isSecure, sameSite := utils.SessionCookieSettings(r)
-
-	// Clear cookie by setting MaxAge to -1
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
 		Value:    "",

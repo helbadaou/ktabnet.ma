@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Book, User as UserType } from '../data/mockData';
 import { BookCard } from '../components/BookCard';
 import { apiUrl, absoluteUrl } from '../config';
+import { authFetch } from '../utils/api';
 
 export function Profile() {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
@@ -17,9 +18,7 @@ export function Profile() {
     const fetchProfileData = async () => {
       try {
         setLoading(true);
-        const res = await fetch(apiUrl(`/api/profile/me`), {
-          credentials: "include",
-        });
+        const res = await authFetch(apiUrl(`/api/auth/me`));
 
         if (!res.ok) {
           throw new Error("Failed to fetch profile");
@@ -28,16 +27,15 @@ export function Profile() {
         const data = await res.json();
 
         const mappedUser = {
-          id: data.Id,
-          first_name: data.FirstName,
-          last_name: data.LastName,
-          name: `${data.Firstname} ${data.Fastname}`,
-          avatar: data.Avatar || "",
-          city: data.City || "Unknown",
+          id: data.id,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+          avatar: data.avatar || "",
+          city: data.city || "Unknown",
           booksListed: data.booksListed || 0,
           booksExchanged: data.booksExchanged || 0,
         };
-        console.log(data.FirstName)
         setCurrentUser(mappedUser);
         setUserBooks(data.books || []);
       } catch (error) {

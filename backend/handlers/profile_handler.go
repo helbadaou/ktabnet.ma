@@ -12,12 +12,22 @@ import (
 	"social/hub"
 	"social/models"
 	"social/services"
+	"social/utils"
 )
 
 type ProfileHandler struct {
 	profileService *services.ProfileService
 	sessionService *services.SessionService
 	Hub            *hub.Hub
+}
+
+type meResponse struct {
+	ID        int    `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"avatar"`
+	City      string `json:"city"`
 }
 
 func NewProfileHandler(service *services.ProfileService, sessionService *services.SessionService, hub *hub.Hub) *ProfileHandler {
@@ -147,10 +157,23 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{
-		"id": userId,
+	user, err := h.profileService.ProfileRepo.GetByID(userId)
+	if err != nil {
+		http.Error(w, "Utilisateur non trouvé", http.StatusNotFound)
+		return
+	}
+
+	user.Avatar = utils.PrepareAvatarURL(user.Avatar)
+
+	resp := meResponse{
+		ID:        user.ID,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Avatar:    user.Avatar,
+		City:      user.City,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(resp)
 }

@@ -9,6 +9,7 @@ import { Separator } from '../components/ui/separator';
 import { Book } from '../data/mockData';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { apiUrl, absoluteUrl } from '../config';
+import { authFetch } from '../utils/api';
 
 type ApiBook = Book & {
   images?: string[];
@@ -34,7 +35,7 @@ export function BookDetail() {
     const fetchBook = async () => {
       setLoading(true);
       try {
-        const response = await fetch(apiUrl(`/api/books/${id}`), { credentials: 'include' });
+        const response = await authFetch(apiUrl(`/api/books/${id}`));
         if (response.ok) {
           const data = await response.json();
           setBook(data);

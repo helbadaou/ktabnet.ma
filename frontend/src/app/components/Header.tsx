@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../config';
+import { authFetch } from '../utils/api';
 
 export function Header() {
   const location = useLocation();
@@ -56,9 +57,8 @@ export function Header() {
     images.forEach((img) => form.append('images', img));
 
     try {
-      const res = await fetch(apiUrl('/api/books'), {
+      const res = await authFetch(apiUrl('/api/books'), {
         method: 'POST',
-        credentials: 'include',
         body: form,
       });
       if (res.ok) {

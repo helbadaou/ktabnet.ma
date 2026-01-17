@@ -6,6 +6,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { BookCard } from '../components/BookCard';
 import { Book } from '../data/mockData';
 import { apiUrl } from '../config';
+import { authFetch } from '../utils/api';
 
 export function HomePage() {
   const FEATURED_LIMIT = 10;
@@ -16,7 +17,7 @@ export function HomePage() {
     const fetchBooks = async () => {
       setLoading(true);
       try {
-        const res = await fetch(apiUrl('/api/books'), { credentials: 'include' });
+        const res = await authFetch(apiUrl('/api/books'));
         if (!res.ok) {
           setFeaturedBooks([]);
           return;

@@ -7,6 +7,7 @@ import { Label } from '../components/ui/label';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { apiUrl } from '../config';
+import { authFetch } from '../utils/api';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -17,18 +18,19 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(apiUrl('/api/login'), {
+      const response = await authFetch(apiUrl('/api/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        login(userData);
+        const data = await response.json();
+        if (data.token && data.user) {
+          login({ token: data.token, user: data.user });
+        }
         navigate('/');
         toast.success('Login successful');
       } else {
