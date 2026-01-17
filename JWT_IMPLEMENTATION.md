@@ -12,7 +12,8 @@ The application has been updated to use JWT-based authentication while maintaini
 
 - **GenerateJWT**: Creates a new JWT token for a user with 7-day expiration
 - **ValidateJWT**: Validates a JWT token and returns the user claims
-- JWT secret is required via `JWT_SECRET` environment variable (warns if not set)
+- JWT secret auto-generates a random secret in development if JWT_SECRET not set
+- Production deployments should always set JWT_SECRET environment variable
 
 ### 2. JWT Middleware (`backend/utils/jwt_middleware.go`)
 
@@ -132,11 +133,15 @@ The implementation maintains full backwards compatibility:
 
 ## Security Considerations
 
-1. **JWT Secret**: Use a strong, random secret key (at least 32 characters) in production via JWT_SECRET environment variable
+1. **JWT Secret**: 
+   - Set JWT_SECRET environment variable in production (minimum 32 characters)
+   - In development, a random secret is auto-generated per session
+   - Tokens won't be valid across server restarts without a fixed JWT_SECRET
 2. **HTTPS**: Always use HTTPS in production to protect tokens in transit
 3. **Token Expiration**: Tokens expire after 7 days for improved security
 4. **XSS Protection**: Tokens in localStorage are vulnerable to XSS - ensure proper input sanitization
 5. **Token Storage**: Consider using httpOnly cookies for JWT in high-security scenarios
+6. **Logging**: JWT validation failures are logged minimally to avoid exposing sensitive information
 
 ## Testing
 

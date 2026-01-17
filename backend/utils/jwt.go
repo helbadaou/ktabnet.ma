@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -9,16 +11,24 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWT secret key - MUST be set via JWT_SECRET environment variable
+// JWT secret key - MUST be set via JWT_SECRET environment variable in production
 var jwtSecret = []byte(getJWTSecret())
 
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		// Warn but use a default for development
-		log.Println("⚠️  WARNING: JWT_SECRET environment variable not set. Using default secret for development only.")
+		// Generate a random secret for development
+		randomSecret := make([]byte, 32)
+		_, err := rand.Read(randomSecret)
+		if err != nil {
+			log.Fatal("Failed to generate random JWT secret:", err)
+		}
+		secret = base64.URLEncoding.EncodeToString(randomSecret)
+		
+		log.Println("⚠️  WARNING: JWT_SECRET environment variable not set. Generated random secret for this session.")
+		log.Println("⚠️  Tokens will NOT be valid across server restarts or multiple instances.")
 		log.Println("⚠️  For production, set JWT_SECRET environment variable to a strong random string (at least 32 characters)")
-		return "default-dev-secret-change-in-production-min-32-chars"
+		return secret
 	}
 	if len(secret) < 32 {
 		log.Println("⚠️  WARNING: JWT_SECRET should be at least 32 characters for security")

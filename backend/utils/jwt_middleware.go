@@ -33,7 +33,8 @@ func JWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// Validate the token
 		claims, err := ValidateJWT(tokenString)
 		if err != nil {
-			fmt.Println("JWT validation error:", err)
+			// Log minimal info for security - avoid exposing token details
+			fmt.Println("JWT validation failed for request to", r.URL.Path)
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return
 		}
