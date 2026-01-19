@@ -30,6 +30,7 @@ type responseUser struct {
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+	Nickname  string `json:"nickname"`
 	Avatar    string `json:"avatar"`
 }
 
@@ -129,6 +130,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 			Email:     user.Email,
 			FirstName: user.FirstName,
 			LastName:  user.LastName,
+			Nickname:  user.Nickname,
 			Avatar:    user.Avatar,
 		},
 	}
