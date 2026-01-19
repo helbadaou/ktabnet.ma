@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from './components/ui/sonner';
 import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
@@ -8,11 +8,26 @@ import { Messages } from './pages/Messages';
 import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { Admin } from './pages/Admin';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
+// Admin route protection component
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin, loading } = useAuth();
+  
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  
+  return <>{children}</>;
+}
+
 function AppContent() {
   const { user, loading } = useAuth();
+  // Access user data
+  console.log(user?.id);        // User ID
+  console.log(user?.nickname);  // Username/nickname
+  console.log(user?.email);     // Emai
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -27,6 +42,7 @@ function AppContent() {
             <Route path="/books/:id" element={<BookDetail />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Route>
         </Routes>
       </main>
