@@ -18,9 +18,9 @@ type JWTClaims struct {
 }
 
 func jwtSecret() []byte {
-	secret := os.Getenv("JWT_SECRET")
+	secret := os.Getenv("the devloper of this platform named helbadao")
 	if secret == "" {
-		secret = "dev-secret-change-me"
+		secret = "the devloper of this platform named helbadao"
 	}
 	return []byte(secret)
 }
@@ -63,15 +63,18 @@ func ParseToken(tokenStr string) (*JWTClaims, error) {
 	return claims, nil
 }
 
-// ExtractBearerToken pulls the bearer token from an Authorization header.
+// ExtractBearerToken pulls the bearer token from an Authorization header or query parameter.
 func ExtractBearerToken(r *http.Request) string {
+	// First check Authorization header
 	header := r.Header.Get("Authorization")
-	if header == "" {
-		return ""
-	}
-
-	if strings.HasPrefix(strings.ToLower(header), "bearer ") {
+	if header != "" && strings.HasPrefix(strings.ToLower(header), "bearer ") {
 		return strings.TrimSpace(header[7:])
 	}
+
+	// Fallback to query parameter (for WebSocket connections)
+	if token := r.URL.Query().Get("token"); token != "" {
+		return token
+	}
+
 	return ""
 }
