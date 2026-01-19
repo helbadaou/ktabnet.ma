@@ -26,8 +26,10 @@ type meResponse struct {
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+	Nickname  string `json:"nickname"`
 	Avatar    string `json:"avatar"`
 	City      string `json:"city"`
+	Role      string `json:"role"`
 }
 
 func NewProfileHandler(service *services.ProfileService, sessionService *services.SessionService, hub *hub.Hub) *ProfileHandler {
@@ -170,8 +172,10 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
+		Nickname:  user.Nickname,
 		Avatar:    user.Avatar,
 		City:      user.City,
+		Role:      user.Role,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
