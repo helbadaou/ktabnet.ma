@@ -95,3 +95,28 @@ func (s *SessionService) GetUserNicknameById(userId int) string {
 func (s *SessionService) CreateSession(userID int) (string, time.Time, error) {
 	return utils.GenerateAccessToken(userID, s.accessTTL)
 }
+
+// GetUserIDFromRequest extracts user ID from the request context or token
+func (s *SessionService) GetUserIDFromRequest(r *http.Request) (int, error) {
+	if ctxID, ok := userIDFromContext(r.Context()); ok {
+		return ctxID, nil
+	}
+
+	token := utils.ExtractBearerToken(r)
+	if token == "" {
+		if cookie, err := r.Cookie("session_id"); err == nil {
+			token = cookie.Value
+		}
+	}
+
+	if token == "" {
+		return 0, http.ErrNoCookie
+	}
+
+	claims, err := utils.ParseToken(token)
+	if err != nil {
+		return 0, err
+	}
+
+	return claims.UserID, nil
+}

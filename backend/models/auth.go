@@ -28,4 +28,5 @@ type User struct {
 	About       string
 	Avatar      string
 	City        string
+	Role        string
 }
