@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, User, MessageSquare, ArrowLeft, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { MapPin, User, MessageSquare, ArrowLeft, ChevronLeft, ChevronRight, X, Flag } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -10,6 +10,9 @@ import { Book } from '../data/mockData';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { apiUrl, absoluteUrl } from '../config';
 import { authFetch } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import { ReportModal } from '../components/ReportModal';
+
 
 type ApiBook = Book & {
   images?: string[];
@@ -30,7 +33,10 @@ export function BookDetail() {
   const [ownerName, setOwnerName] = useState('');
   const [ownerCity, setOwnerCity] = useState('');
   const [ownerAvatar, setOwnerAvatar] = useState('');
+  const {user} = useAuth();
+  console.log('Current user in BookDetail:', user);
 
+  
   useEffect(() => {
     const fetchBook = async () => {
       setLoading(true);
@@ -89,6 +95,7 @@ export function BookDetail() {
   }
 
   const toAbsolute = (path: string) => absoluteUrl(path);
+  const currentUserId = typeof user?.id === 'string' ? Number(user.id) : user?.id;
 
   const images = book.images && book.images.length > 0
     ? book.images
@@ -161,7 +168,22 @@ export function BookDetail() {
           {/* Book Details */}
           <div>
             <div className="mb-6">
-              <h1 className="text-4xl font-bold mb-2">{book.title}</h1>
+              <div className="flex items-start justify-between">
+                <h1 className="text-4xl font-bold mb-2">{book.title}</h1>
+                {/* Report Book Button */}
+                {user?.id !== book.owner_id && user?.id !== book.owner?.id && (
+                  <ReportModal
+                    reportedType="book"
+                    reportedId={book.id}
+                    reportedName={book.title}
+                    trigger={
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                        <Flag className="h-5 w-5" />
+                      </Button>
+                    }
+                  />
+                )}
+              </div>
               <p className="text-xl text-muted-foreground mb-4">{book.author}</p>
               {ownerName && (
                 <p className="text-sm text-muted-foreground mb-2">Owner: {ownerName}</p>
@@ -223,14 +245,14 @@ export function BookDetail() {
                 {book.available && (
                   <Button
                     className="w-full"
-                    onClick={() => navigate('/messages', { 
-                      state: { 
+                    onClick={() => navigate('/messages', {
+                      state: {
                         selectedUserId: book.owner_id || book.owner?.id,
                         selectedUserName: ownerName || (book.owner?.first_name + " " + book.owner?.last_name),
                         selectedUserAvatar: ownerAvatar || book.owner?.avatar,
                         bookId: book.id,
                         bookTitle: book.title
-                      } 
+                      }
                     })}
                   >
                     <MessageSquare className="mr-2 h-4 w-4" />
