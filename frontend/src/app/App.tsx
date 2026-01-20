@@ -11,6 +11,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Admin } from './pages/Admin';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WebSocketProvider } from './context/WebSocketContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Admin route protection component
@@ -61,8 +62,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
-        <Toaster />
+        <WebSocketProvider>
+          <AppContent />
+          <Toaster />
+        </WebSocketProvider>
       </AuthProvider>
     </BrowserRouter>
   );

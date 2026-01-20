@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Send, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
@@ -8,7 +8,8 @@ import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Separator } from '../components/ui/separator';
 import { AuthContext } from '../context/AuthContext';
-import { apiUrl, wsUrl } from '../config';
+import { useWebSocket, WebSocketMessage } from '../context/WebSocketContext';
+import { apiUrl } from '../config';
 import { authFetch } from '../utils/api';
 
 // Define a message type with an `isMine` property for display purposes
@@ -28,6 +29,7 @@ interface User {
 export function Messages() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
+  const { status: wsStatus, sendMessage: wsSendMessage, subscribe } = useWebSocket();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<User[]>([]);
@@ -36,8 +38,39 @@ export function Messages() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [ws, setWs] = useState<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const selectedUserRef = useRef<User | null>(null);
+
+  // Keep selectedUserRef in sync
+  useEffect(() => {
+    selectedUserRef.current = selectedUser;
+  }, [selectedUser]);
+
+  // Subscribe to private messages
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubscribe = subscribe('private', (message: WebSocketMessage) => {
+      const isMine = String(message.from) === String(currentUser.id);
+      
+      // Skip if this is our own message (already added via optimistic update)
+      if (isMine) {
+        return;
+      }
+
+      // Only add message if it's from the currently selected user
+      const currentSelectedUser = selectedUserRef.current;
+      if (currentSelectedUser && String(message.from) === currentSelectedUser.id) {
+        const id = `${message.timestamp}-${Math.random().toString(36).slice(2, 8)}`;
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { id, content: message.content || '', isMine: false, timestamp: new Date(message.timestamp || Date.now()) },
+        ]);
+      }
+    });
+
+    return unsubscribe;
+  }, [currentUser, subscribe]);
 
   // Handle URL query parameter ?user=id
   useEffect(() => {
@@ -79,58 +112,6 @@ export function Messages() {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-
-  useEffect(() => {
-    if (selectedUser && currentUser) {
-      console.log('Attempting to connect to WebSocket...');
-      
-      // Get auth token for WebSocket authentication
-      const token = localStorage.getItem('auth_token');
-      const wsUrlWithAuth = token 
-        ? `${wsUrl('/ws')}?token=${encodeURIComponent(token)}`
-        : wsUrl('/ws');
-      
-      const socket = new WebSocket(wsUrlWithAuth);
-      console.log('WebSocket created for user:', currentUser.id);
-      setWs(socket);
-
-      socket.onopen = () => {
-        console.log('WebSocket connected');
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          const isMine = String(message.from) === String(currentUser.id);
-          const id = message.id || `${message.timestamp}-${Math.random().toString(36).slice(2, 8)}`;
-          
-          // Skip if this is our own message (already added via optimistic update)
-          if (isMine) {
-            return;
-          }
-          
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            { id, content: message.content, isMine, timestamp: new Date(message.timestamp) },
-          ]);
-        } catch (err) {
-          console.error('Failed to parse websocket message', err);
-        }
-      };
-
-      socket.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
-      };
-
-      socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      return () => {
-        socket.close();
-      };
-    }
-  }, [selectedUser, currentUser]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -201,24 +182,21 @@ export function Messages() {
     fetchConversations();
   }, [currentUser]);
 
-  const handleSend = () => {
-    if (newMessage.trim() && selectedUser && ws && currentUser) {
+  const handleSend = useCallback(() => {
+    if (newMessage.trim() && selectedUser && currentUser && wsStatus === 'connected') {
       const fromId = parseInt(String(currentUser.id));
       const messageContent = newMessage.trim();
       const timestamp = new Date().toISOString();
-      const payload = {
+      
+      const success = wsSendMessage({
         type: 'private',
         from: fromId,
         to: parseInt(selectedUser.id),
         content: messageContent,
         timestamp: timestamp,
-      };
-      try {
-        if (ws.readyState !== WebSocket.OPEN) {
-          console.warn('WebSocket not open, cannot send message');
-          return;
-        }
-        ws.send(JSON.stringify(payload));
+      });
+
+      if (success) {
         // Optimistic update - add message to UI immediately
         const optimisticMessage: Message = {
           id: `${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
@@ -228,11 +206,9 @@ export function Messages() {
         };
         setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
         setNewMessage('');
-      } catch (err) {
-        console.error('Failed to send message', err);
       }
     }
-  };
+  }, [newMessage, selectedUser, currentUser, wsStatus, wsSendMessage]);
 
   if (!currentUser) {
     return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
