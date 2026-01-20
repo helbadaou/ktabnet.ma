@@ -10,8 +10,10 @@ import { UserProfile } from './pages/UserProfile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Admin } from './pages/Admin';
+import { ExchangeRequests } from './pages/ExchangeRequests';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Admin route protection component
@@ -43,6 +45,7 @@ function AppContent() {
             <Route path="/books" element={<Books />} />
             <Route path="/books/:id" element={<BookDetail />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/exchanges" element={<ExchangeRequests />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:id" element={<UserProfile />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
@@ -63,8 +66,10 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <WebSocketProvider>
-          <AppContent />
-          <Toaster />
+          <NotificationProvider>
+            <AppContent />
+            <Toaster />
+          </NotificationProvider>
         </WebSocketProvider>
       </AuthProvider>
     </BrowserRouter>

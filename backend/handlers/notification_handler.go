@@ -102,3 +102,21 @@ func (h *NotificationHandler) DeleteNotification(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
+
+// GetUnreadCount returns the count of unread notifications
+func (h *NotificationHandler) GetUnreadCount(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.SessionService.GetUserIDFromSession(w, r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	count, err := h.NotificationService.GetUnreadNotificationCount(userID)
+	if err != nil {
+		log.Println("Error fetching unread count:", err)
+		count = 0
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(w).Encode(map[string]int{"count": count})
+}

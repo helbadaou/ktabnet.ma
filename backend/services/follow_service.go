@@ -17,74 +17,102 @@ func NewFollowService(repo *repositories.FollowRepository, NotifRepo *repositori
 }
 
 func (s *FollowService) SendFollowRequest(followerID, followedID int) (models.Notification, string, error) {
-    exists, err := s.Repo.FollowExists(followerID, followedID)
-    if err != nil {
-        return models.Notification{}, "", err
-    }
-    if exists {
-        return models.Notification{}, "already_following", nil
-    }
+	exists, err := s.Repo.FollowExists(followerID, followedID)
+	if err != nil {
+		return models.Notification{}, "", err
+	}
+	if exists {
+		return models.Notification{}, "already_following", nil
+	}
 
-    isPrivate, err := s.Repo.IsPrivate(followedID)
-    if err != nil {
-        return models.Notification{}, "", err
-    }
+	isPrivate, err := s.Repo.IsPrivate(followedID)
+	if err != nil {
+		return models.Notification{}, "", err
+	}
 
-    status := "pending"
-    if !isPrivate {
-        status = "accepted"
-    }
+	status := "pending"
+	if !isPrivate {
+		status = "accepted"
+	}
 
-    req := models.FollowRequest{
-        FollowerID: followerID,
-        FollowedID: followedID,
-        Status:     status,
-    }
+	req := models.FollowRequest{
+		FollowerID: followerID,
+		FollowedID: followedID,
+		Status:     status,
+	}
 
-    err = s.Repo.InsertFollow(req)
-    if err != nil {
-        return models.Notification{}, "", err
-    }
+	err = s.Repo.InsertFollow(req)
+	if err != nil {
+		return models.Notification{}, "", err
+	}
 
-    var notification models.Notification
-    
-    // Only create notification for private accounts (pending requests)
-    if isPrivate {
-        senderName, err := s.Repo.GetSenderName(followerID)
-        if err != nil {
-            return models.Notification{}, "", err
-        }
+	var notification models.Notification
 
-        // Create notification object
-        notification = models.Notification{
-            SenderID:       followerID,
-            SenderNickname: senderName,
-            Type:           "follow_request",
-            Message:        fmt.Sprintf("%s sent you a follow request", senderName),
-            Seen:           false,
-            CreatedAt:      time.Now().Format(time.RFC3339),
-        }
+	// Only create notification for private accounts (pending requests)
+	if isPrivate {
+		senderName, err := s.Repo.GetSenderName(followerID)
+		if err != nil {
+			return models.Notification{}, "", err
+		}
 
-        // Insert notification into database
-        err = s.NotifRepo.CreateFollowRequestNotification(followedID, followerID, senderName)
-        if err != nil {
-            return models.Notification{}, "", err
-        }
-    }
+		// Create notification object
+		notification = models.Notification{
+			SenderID:       followerID,
+			SenderNickname: senderName,
+			Type:           "follow_request",
+			Message:        fmt.Sprintf("%s sent you a follow request", senderName),
+			Seen:           false,
+			CreatedAt:      time.Now().Format(time.RFC3339),
+		}
 
-    return notification, status, nil
+		// Insert notification into database
+		err = s.NotifRepo.CreateFollowRequestNotification(followedID, followerID, senderName)
+		if err != nil {
+			return models.Notification{}, "", err
+		}
+	}
+
+	return notification, status, nil
 }
 
 func (s *FollowService) GetFollowStatus(followerID, followedID int) (string, error) {
 	return s.Repo.GetFollowStatus(followerID, followedID)
 }
 
-func (s *FollowService) AcceptFollowRequest(senderID, receiverID int) error {
+func (s *FollowService) AcceptFollowRequest(senderID, receiverID int) (models.Notification, error) {
 	err := s.Repo.AcceptFollowRequest(senderID, receiverID)
 	if err != nil {
-		return err
+		return models.Notification{}, err
 	}
-	return s.Repo.UpdateFollowNotificationStatus(senderID, receiverID, "accepted")
+	err = s.Repo.UpdateFollowNotificationStatus(senderID, receiverID, "accepted")
+	if err != nil {
+		return models.Notification{}, err
+	}
+
+	// Create notification for the requester that their request was accepted
+	receiverName, err := s.Repo.GetSenderName(receiverID)
+	if err != nil {
+		return models.Notification{}, nil // Don't fail if we can't get the name
+	}
+
+	notification := models.Notification{
+		SenderID:       receiverID,
+		SenderNickname: receiverName,
+		Type:           models.NotificationTypeFollowAccept,
+		Message:        fmt.Sprintf("%s accepted your follow request", receiverName),
+		Seen:           false,
+		CreatedAt:      time.Now().Format(time.RFC3339),
+	}
+
+	// Save notification to database
+	s.NotifRepo.CreateNotification(models.CreateNotificationRequest{
+		UserID:   senderID,
+		SenderID: receiverID,
+		Type:     models.NotificationTypeFollowAccept,
+		Message:  notification.Message,
+	})
+
+	return notification, nil
 }
 
 func (s *FollowService) RejectFollowRequest(senderID, receiverID int) error {

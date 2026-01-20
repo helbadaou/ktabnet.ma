@@ -238,6 +238,56 @@ func (r *BookRepository) RemoveImage(imageID int) error {
 	return err
 }
 
+func (r *BookRepository) CreateExchangeRequest(bookID, offeredBookID, requesterID int) (int, bool, error) {
+	// Validate target book availability and ownership
+	var targetOwner int
+	var targetAvailable bool
+	err := r.DB.QueryRow(`SELECT owner_id, available FROM books WHERE id = ?`, bookID).Scan(&targetOwner, &targetAvailable)
+	if err != nil {
+		return 0, false, err
+	}
+	if targetOwner == requesterID {
+		return 0, false, fmt.Errorf("cannot exchange with your own book")
+	}
+	if !targetAvailable {
+		return 0, false, fmt.Errorf("target book not available")
+	}
+
+	// Validate offered book belongs to requester and is available
+	var offeredOwner int
+	var offeredAvailable bool
+	err = r.DB.QueryRow(`SELECT owner_id, available FROM books WHERE id = ?`, offeredBookID).Scan(&offeredOwner, &offeredAvailable)
+	if err != nil {
+		return 0, false, err
+	}
+	if offeredOwner != requesterID {
+		return 0, false, fmt.Errorf("offered book does not belong to requester")
+	}
+	if !offeredAvailable {
+		return 0, false, fmt.Errorf("offered book not available")
+	}
+
+	// Avoid duplicate pending request for same pair
+	var existing int
+	_ = r.DB.QueryRow(`
+		SELECT id FROM book_exchanges 
+		WHERE book_id = ? AND offered_book_id = ? AND requester_id = ? AND status = 'pending'
+	`, bookID, offeredBookID, requesterID).Scan(&existing)
+	if existing != 0 {
+		return existing, false, nil // Not a new request
+	}
+
+	res, err := r.DB.Exec(`
+		INSERT INTO book_exchanges (book_id, offered_book_id, requester_id, status)
+		VALUES (?, ?, ?, 'pending')
+	`, bookID, offeredBookID, requesterID)
+	if err != nil {
+		return 0, false, err
+	}
+	id, _ := res.LastInsertId()
+	return int(id), true, nil // New request created
+}
+
 func (r *BookRepository) SearchBooks(query string) ([]models.BookSearchResult, error) {
 	search := "%" + strings.ToLower(query) + "%"
 	rows, err := r.DB.Query(`
@@ -266,4 +316,111 @@ func (r *BookRepository) SearchBooks(query string) ([]models.BookSearchResult, e
 		results = append(results, book)
 	}
 	return results, nil
+}
+
+// GetUserExchangeRequests returns all exchange requests for a user (both incoming and outgoing)
+func (r *BookRepository) GetUserExchangeRequests(userID int) ([]models.BookExchangeRequest, error) {
+	rows, err := r.DB.Query(`
+		SELECT 
+			e.id,
+			e.book_id,
+			b.title as book_title,
+			b.author as book_author,
+			(SELECT image_url FROM book_images WHERE book_id = b.id ORDER BY order_index LIMIT 1) as book_image,
+			e.offered_book_id,
+			ob.title as offered_title,
+			ob.author as offered_author,
+			(SELECT image_url FROM book_images WHERE book_id = ob.id ORDER BY order_index LIMIT 1) as offered_image,
+			e.requester_id,
+			COALESCE(ru.first_name || ' ' || ru.last_name, '') as requester_name,
+			COALESCE(ru.avatar, '') as requester_avatar,
+			b.owner_id,
+			COALESCE(ou.first_name || ' ' || ou.last_name, '') as owner_name,
+			COALESCE(ou.avatar, '') as owner_avatar,
+			e.status,
+			e.created_at
+		FROM book_exchanges e
+		JOIN books b ON e.book_id = b.id
+		JOIN books ob ON e.offered_book_id = ob.id
+		JOIN users ru ON e.requester_id = ru.id
+		JOIN users ou ON b.owner_id = ou.id
+		WHERE e.requester_id = ? OR b.owner_id = ?
+		ORDER BY e.created_at DESC
+	`, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var requests []models.BookExchangeRequest
+	for rows.Next() {
+		var req models.BookExchangeRequest
+		var bookImage, offeredImage sql.NullString
+		if err := rows.Scan(
+			&req.ID,
+			&req.BookID,
+			&req.BookTitle,
+			&req.BookAuthor,
+			&bookImage,
+			&req.OfferedBookID,
+			&req.OfferedTitle,
+			&req.OfferedAuthor,
+			&offeredImage,
+			&req.RequesterID,
+			&req.RequesterName,
+			&req.RequesterAvatar,
+			&req.OwnerID,
+			&req.OwnerName,
+			&req.OwnerAvatar,
+			&req.Status,
+			&req.CreatedAt,
+		); err != nil {
+			continue
+		}
+		if bookImage.Valid {
+			req.BookImage = bookImage.String
+		}
+		if offeredImage.Valid {
+			req.OfferedImage = offeredImage.String
+		}
+		req.IsIncoming = req.OwnerID == userID
+		requests = append(requests, req)
+	}
+	return requests, nil
+}
+
+// UpdateExchangeStatus updates the status of an exchange request
+func (r *BookRepository) UpdateExchangeStatus(exchangeID, userID int, status string) error {
+	// Verify the user is the owner of the requested book
+	var ownerID int
+	err := r.DB.QueryRow(`
+		SELECT b.owner_id 
+		FROM book_exchanges e
+		JOIN books b ON e.book_id = b.id
+		WHERE e.id = ?
+	`, exchangeID).Scan(&ownerID)
+	if err != nil {
+		return err
+	}
+	if ownerID != userID {
+		return fmt.Errorf("unauthorized: only book owner can update exchange status")
+	}
+
+	_, err = r.DB.Exec(`UPDATE book_exchanges SET status = ? WHERE id = ?`, status, exchangeID)
+	return err
+}
+
+// CancelExchangeRequest cancels an exchange request (only requester can cancel)
+func (r *BookRepository) CancelExchangeRequest(exchangeID, userID int) error {
+	var requesterID int
+	err := r.DB.QueryRow(`SELECT requester_id FROM book_exchanges WHERE id = ?`, exchangeID).Scan(&requesterID)
+	if err != nil {
+		return err
+	}
+	if requesterID != userID {
+		return fmt.Errorf("unauthorized: only requester can cancel")
+	}
+
+	_, err = r.DB.Exec(`UPDATE book_exchanges SET status = 'cancelled' WHERE id = ?`, exchangeID)
+	return err
 }

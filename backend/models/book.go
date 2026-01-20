@@ -63,3 +63,25 @@ type BookSearchResult struct {
 	City   string `json:"city"`
 	Image  string `json:"image"`
 }
+
+// BookExchangeRequest represents a book exchange request with full details
+type BookExchangeRequest struct {
+	ID              int    `json:"id"`
+	BookID          int    `json:"book_id"`
+	BookTitle       string `json:"book_title"`
+	BookAuthor      string `json:"book_author"`
+	BookImage       string `json:"book_image"`
+	OfferedBookID   int    `json:"offered_book_id"`
+	OfferedTitle    string `json:"offered_title"`
+	OfferedAuthor   string `json:"offered_author"`
+	OfferedImage    string `json:"offered_image"`
+	RequesterID     int    `json:"requester_id"`
+	RequesterName   string `json:"requester_name"`
+	RequesterAvatar string `json:"requester_avatar"`
+	OwnerID         int    `json:"owner_id"`
+	OwnerName       string `json:"owner_name"`
+	OwnerAvatar     string `json:"owner_avatar"`
+	Status          string `json:"status"`
+	CreatedAt       string `json:"created_at"`
+	IsIncoming      bool   `json:"is_incoming"` // true if current user is the book owner
+}

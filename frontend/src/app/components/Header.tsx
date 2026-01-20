@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, MessageSquare, PlusCircle, User, Menu, LogOut, Plus } from 'lucide-react';
+import { BookOpen, MessageSquare, PlusCircle, User, Menu, LogOut, Plus, ArrowLeftRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { SearchBar } from './SearchBar';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -9,11 +9,14 @@ import { Input } from './ui/input';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../config';
 import { authFetch } from '../utils/api';
+import { NotificationBell } from './NotificationBell';
+import { useNotifications } from '../context/NotificationContext';
 
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { unreadMessageCount } = useNotifications();
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -29,6 +32,7 @@ export function Header() {
   const navLinks = [
     { path: '/', label: 'Home', icon: BookOpen },
     { path: '/books', label: 'Browse Books', icon: BookOpen },
+    { path: '/exchanges', label: 'Exchanges', icon: ArrowLeftRight },
     { path: '/messages', label: 'Messages', icon: MessageSquare },
     { path: '/profile', label: 'Profile', icon: User }
   ];
@@ -99,12 +103,18 @@ export function Header() {
             <Link
               key={link.path}
               to={link.path}
-              className={`text-sm font-medium transition-colors hover:text-primary ${isActive(link.path) ? 'text-primary' : 'text-muted-foreground'
+              className={`relative text-sm font-medium transition-colors hover:text-primary ${isActive(link.path) ? 'text-primary' : 'text-muted-foreground'
                 }`}
             >
               {link.label}
+              {link.path === '/messages' && unreadMessageCount > 0 && (
+                <span className="absolute -top-2 -right-4 h-5 min-w-5 px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                  {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                </span>
+              )}
             </Link>
           ))}
+          <NotificationBell />
           <Button onClick={() => setShowAddForm(true)}>
             <Plus className="w-4 h-4 mr-2" /> Add Book
           </Button>
@@ -114,39 +124,47 @@ export function Header() {
         </nav>
 
         {/* Mobile Navigation */}
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <nav className="flex flex-col gap-4 mt-8">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`flex items-center gap-3 text-sm font-medium transition-colors hover:text-primary ${isActive(link.path) ? 'text-primary' : 'text-muted-foreground'
-                      }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-3 text-sm font-medium">
-                <LogOut className="h-5 w-5" />
-                Logout
+        <div className="flex items-center gap-2 md:hidden">
+          <NotificationBell />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
               </Button>
-              <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-3 text-sm font-medium">
-                <Plus className="h-5 w-5" />
-                Add Book
-              </Button>
-            </nav>
-          </SheetContent>
-        </Sheet>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <nav className="flex flex-col gap-4 mt-8">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={`relative flex items-center gap-3 text-sm font-medium transition-colors hover:text-primary ${isActive(link.path) ? 'text-primary' : 'text-muted-foreground'
+                        }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {link.label}
+                      {link.path === '/messages' && unreadMessageCount > 0 && (
+                        <span className="ml-auto h-5 min-w-5 px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                          {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+                <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-3 text-sm font-medium">
+                  <LogOut className="h-5 w-5" />
+                  Logout
+                </Button>
+                <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-3 text-sm font-medium">
+                  <Plus className="h-5 w-5" />
+                  Add Book
+                </Button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {/* Add Book Form Modal */}

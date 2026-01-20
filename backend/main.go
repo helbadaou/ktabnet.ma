@@ -59,7 +59,7 @@ func main() {
 	notifHandler := handlers.NewNotificationHandler(notifService, sessionService)
 	postHandler := handlers.NewPostHandler(postService, sessionService)
 	profileHandler := handlers.NewProfileHandler(profileService, sessionService, hub)
-	bookHandler := handlers.NewBookHandler(bookService, sessionService)
+	bookHandler := handlers.NewBookHandler(bookService, sessionService, notifService, hub)
 
 	// 6. Setup Router
 	mux := http.NewServeMux()
@@ -95,17 +95,25 @@ func main() {
 	// Chat routes
 	mux.Handle("/api/chat-users", sessionService.Middleware(http.HandlerFunc(chatHandler.GetAllChatUsers)))
 	mux.Handle("/api/chat/history", sessionService.Middleware(http.HandlerFunc(chatHandler.GetChatHistory)))
+	mux.Handle("/api/chat/unread-count", sessionService.Middleware(http.HandlerFunc(chatHandler.GetUnreadMessageCount)))
+	mux.Handle("/api/chat/unread-per-conversation", sessionService.Middleware(http.HandlerFunc(chatHandler.GetUnreadCountPerConversation)))
+	mux.Handle("/api/chat/mark-read", sessionService.Middleware(http.HandlerFunc(chatHandler.MarkMessagesAsRead)))
 
 	// Notification routes
 	mux.Handle("/api/notifications", sessionService.Middleware(http.HandlerFunc(notifHandler.GetUserNotifications)))
 	mux.Handle("/api/notifications/seen", sessionService.Middleware(http.HandlerFunc(notifHandler.MarkNotificationSeen)))
 	mux.Handle("/api/notifications/delete", sessionService.Middleware(http.HandlerFunc(notifHandler.DeleteNotification)))
+	mux.Handle("/api/notifications/unread-count", sessionService.Middleware(http.HandlerFunc(notifHandler.GetUnreadCount)))
 
 	// Book routes
 	mux.Handle("/api/books", sessionService.Middleware(http.HandlerFunc(bookHandler.BooksHandler)))
 	mux.Handle("/api/books/search", sessionService.Middleware(http.HandlerFunc(bookHandler.SearchBooksHandler)))
 	mux.Handle("/api/books/", sessionService.Middleware(http.HandlerFunc(bookHandler.GetBookHandler)))
+	mux.Handle("/api/books/exchange", sessionService.Middleware(http.HandlerFunc(bookHandler.ExchangeBookHandler)))
 	mux.Handle("/api/my-books", sessionService.Middleware(http.HandlerFunc(bookHandler.GetMyBooksHandler)))
+	mux.Handle("/api/exchange-requests", sessionService.Middleware(http.HandlerFunc(bookHandler.GetExchangeRequestsHandler)))
+	mux.Handle("/api/exchange-requests/update", sessionService.Middleware(http.HandlerFunc(bookHandler.UpdateExchangeStatusHandler)))
+	mux.Handle("/api/exchange-requests/cancel", sessionService.Middleware(http.HandlerFunc(bookHandler.CancelExchangeHandler)))
 
 	// Group routes
 

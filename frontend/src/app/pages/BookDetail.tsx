@@ -1,17 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, User, MessageSquare, ArrowLeft, ChevronLeft, ChevronRight, X, Flag } from 'lucide-react';
+import { MapPin, User, MessageSquare, ArrowLeft, ChevronLeft, ChevronRight, X, Flag, Repeat } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Book } from '../data/mockData';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { apiUrl, absoluteUrl } from '../config';
 import { authFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { ReportModal } from '../components/ReportModal';
+
+type MyBookOption = {
+  id: number;
+  title: string;
+  image?: string;
+  available: boolean;
+  author?: string;
+  condition?: string;
+};
 
 
 type ApiBook = Book & {
@@ -33,6 +44,13 @@ export function BookDetail() {
   const [ownerName, setOwnerName] = useState('');
   const [ownerCity, setOwnerCity] = useState('');
   const [ownerAvatar, setOwnerAvatar] = useState('');
+  const [isExchangeOpen, setIsExchangeOpen] = useState(false);
+  const [myBooks, setMyBooks] = useState<MyBookOption[]>([]);
+  const [myBooksLoading, setMyBooksLoading] = useState(false);
+  const [selectedOfferId, setSelectedOfferId] = useState('');
+  const [exchangeError, setExchangeError] = useState('');
+  const [exchangeSuccess, setExchangeSuccess] = useState('');
+  const [submittingExchange, setSubmittingExchange] = useState(false);
   const {user} = useAuth();
   console.log('Current user in BookDetail:', user);
 
@@ -75,6 +93,83 @@ export function BookDetail() {
     populateOwner();
   }, [book]);
 
+  useEffect(() => {
+    if (!isExchangeOpen) return;
+    const fetchMyBooks = async () => {
+      setMyBooksLoading(true);
+      setExchangeError('');
+      setExchangeSuccess('');
+      try {
+        const res = await authFetch(apiUrl('/api/my-books'));
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || 'Failed to fetch your books');
+        }
+        const data = await res.json();
+        const options: MyBookOption[] = (data || []).map((b: any) => ({
+          id: Number(b.id),
+          title: b.title,
+          image: b.images?.[0],
+          available: Boolean(b.available),
+          author: b.author,
+          condition: b.condition,
+        }));
+        setMyBooks(options);
+        if (!selectedOfferId && options.length > 0) {
+          const firstAvailable = options.find((b) => b.available) || options[0];
+          setSelectedOfferId(String(firstAvailable.id));
+        }
+      } catch (error: any) {
+        setExchangeError(error?.message || 'Failed to load your books');
+      } finally {
+        setMyBooksLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchMyBooks();
+    } else {
+      setExchangeError('You need to be logged in to request an exchange.');
+    }
+  }, [isExchangeOpen, user]);
+
+  const handleExchangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOfferId) {
+      setExchangeError('Select one of your books to offer.');
+      return;
+    }
+    if (!book) {
+      setExchangeError('Book information is unavailable.');
+      return;
+    }
+    setSubmittingExchange(true);
+    setExchangeError('');
+    setExchangeSuccess('');
+    try {
+      const res = await authFetch(apiUrl('/api/books/exchange'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          book_id: Number(book.id),
+          offered_book_id: Number(selectedOfferId),
+        }),
+      });
+      if (res.ok) {
+        setExchangeSuccess('Exchange request sent.');
+      } else {
+        const msg = await res.text();
+        setExchangeError(msg || 'Failed to send exchange request.');
+      }
+    } catch (error) {
+      setExchangeError('Failed to send exchange request.');
+    } finally {
+      setSubmittingExchange(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container py-16 text-center">
@@ -96,6 +191,8 @@ export function BookDetail() {
 
   const toAbsolute = (path: string) => absoluteUrl(path);
   const currentUserId = typeof user?.id === 'string' ? Number(user.id) : user?.id;
+  const isOwner = currentUserId === (book.owner_id || book.owner?.id);
+  const canExchange = Boolean(book.available && !isOwner && currentUserId);
 
   const images = book.images && book.images.length > 0
     ? book.images
@@ -243,21 +340,38 @@ export function BookDetail() {
                   <div className="mb-4 text-muted-foreground">Owner information unavailable</div>
                 )}
                 {book.available && (
-                  <Button
-                    className="w-full"
-                    onClick={() => navigate('/messages', {
-                      state: {
-                        selectedUserId: book.owner_id || book.owner?.id,
-                        selectedUserName: ownerName || (book.owner?.first_name + " " + book.owner?.last_name),
-                        selectedUserAvatar: ownerAvatar || book.owner?.avatar,
-                        bookId: book.id,
-                        bookTitle: book.title
-                      }
-                    })}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Message Owner
-                  </Button>
+                  <div className="grid gap-3">
+                    <Button
+                      className="w-full"
+                      onClick={() => navigate('/messages', {
+                        state: {
+                          selectedUserId: book.owner_id || book.owner?.id,
+                          selectedUserName: ownerName || (book.owner?.first_name + " " + book.owner?.last_name),
+                          selectedUserAvatar: ownerAvatar || book.owner?.avatar,
+                          bookId: book.id,
+                          bookTitle: book.title
+                        }
+                      })}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Message Owner
+                    </Button>
+                    {canExchange && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setExchangeError('');
+                          setExchangeSuccess('');
+                          setSelectedOfferId('');
+                          setIsExchangeOpen(true);
+                        }}
+                      >
+                        <Repeat className="mr-2 h-4 w-4" />
+                        Request Exchange
+                      </Button>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -289,6 +403,48 @@ export function BookDetail() {
           />
         </div>
       )}
+
+      <Dialog open={isExchangeOpen} onOpenChange={setIsExchangeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request an Exchange</DialogTitle>
+            <DialogDescription>
+              Offer one of your available books in exchange for this title.
+            </DialogDescription>
+          </DialogHeader>
+
+          {myBooksLoading ? (
+            <p className="text-sm text-muted-foreground">Loading your books...</p>
+          ) : myBooks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">You do not have any books to offer yet.</p>
+          ) : (
+            <form onSubmit={handleExchangeSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Choose a book to offer</p>
+                <Select value={selectedOfferId} onValueChange={setSelectedOfferId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select one of your books" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {myBooks.map((b) => (
+                      <SelectItem key={b.id} value={String(b.id)} disabled={!b.available}>
+                        {b.title} {b.available ? '' : '(Not available)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {exchangeError && <p className="text-sm text-destructive">{exchangeError}</p>}
+              {exchangeSuccess && <p className="text-sm text-green-600">{exchangeSuccess}</p>}
+
+              <Button type="submit" className="w-full" disabled={submittingExchange || !selectedOfferId}>
+                {submittingExchange ? 'Sending...' : 'Send Exchange Request'}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

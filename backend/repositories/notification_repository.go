@@ -15,7 +15,7 @@ func NewNotificationRepository(db *sql.DB) *NotificationRepository {
 }
 
 func (repo *NotificationRepository) GetNotificationsByUserID(userID int) ([]models.Notification, error) {
-    rows, err := repo.DB.Query(`
+	rows, err := repo.DB.Query(`
         SELECT 
             n.id, 
             n.sender_id, 
@@ -30,46 +30,45 @@ func (repo *NotificationRepository) GetNotificationsByUserID(userID int) ([]mode
         LEFT JOIN users u ON n.sender_id = u.id
         WHERE n.user_id = ?
         ORDER BY n.created_at DESC`, userID)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var notifications []models.Notification
+	var notifications []models.Notification
 
-    for rows.Next() {
-    var notif models.Notification
-    var groupID sql.NullInt64
-    var eventID sql.NullInt64 // Handle NULL for event_id
+	for rows.Next() {
+		var notif models.Notification
+		var groupID sql.NullInt64
+		var eventID sql.NullInt64 // Handle NULL for event_id
 
-    err := rows.Scan(
-        &notif.ID,
-        &notif.SenderID,
-        &notif.SenderNickname,
-        &groupID,
-        &eventID, // Scan into NullInt64
-        &notif.Type,
-        &notif.Message,
-        &notif.Seen,
-        &notif.CreatedAt,
-    )
-    if err != nil {
-        log.Println("Failed to scan notification:", err)
-        continue
-    }
+		err := rows.Scan(
+			&notif.ID,
+			&notif.SenderID,
+			&notif.SenderNickname,
+			&groupID,
+			&eventID, // Scan into NullInt64
+			&notif.Type,
+			&notif.Message,
+			&notif.Seen,
+			&notif.CreatedAt,
+		)
+		if err != nil {
+			log.Println("Failed to scan notification:", err)
+			continue
+		}
 
-    if groupID.Valid {
-        notif.GroupId = int(groupID.Int64)
-    }
-    if eventID.Valid {
-        notif.EventId = int(eventID.Int64)
-    }
+		if groupID.Valid {
+			notif.GroupId = int(groupID.Int64)
+		}
+		if eventID.Valid {
+			notif.EventId = int(eventID.Int64)
+		}
 
-    notifications = append(notifications, notif)
-}
+		notifications = append(notifications, notif)
+	}
 
-
-    return notifications, nil
+	return notifications, nil
 }
 
 func (r *NotificationRepository) MarkAllAsSeen(userID int) error {
@@ -98,4 +97,30 @@ func (r *NotificationRepository) CreateFollowRequestNotification(userID, senderI
         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
 		userID, senderID, "follow_request", senderName+" sent you a follow request")
 	return err
+}
+
+// CreateNotification creates a generic notification
+func (r *NotificationRepository) CreateNotification(req models.CreateNotificationRequest) error {
+	_, err := r.DB.Exec(`
+        INSERT INTO notifications (user_id, sender_id, type, message, group_id, event_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+		req.UserID, req.SenderID, req.Type, req.Message, nullInt(req.GroupID), nullInt(req.EventID))
+	return err
+}
+
+// GetUnreadNotificationCount returns the count of unseen notifications for a user
+func (r *NotificationRepository) GetUnreadNotificationCount(userID int) (int, error) {
+	var count int
+	err := r.DB.QueryRow(`
+        SELECT COUNT(*) FROM notifications 
+        WHERE user_id = ? AND seen = 0`, userID).Scan(&count)
+	return count, err
+}
+
+// nullInt returns nil for 0 values to store as NULL in database
+func nullInt(val int) interface{} {
+	if val == 0 {
+		return nil
+	}
+	return val
 }

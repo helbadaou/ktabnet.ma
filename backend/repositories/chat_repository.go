@@ -173,3 +173,46 @@ func (r *ChatRepository) SaveGroupMessage(msg models.Message) error {
 func (r *ChatRepository) CheckPrivateProfileAccess(senderID, recipientID int) (bool, error) {
 	return true, nil
 }
+
+// GetUnreadMessageCount returns total unread messages for a user
+func (r *ChatRepository) GetUnreadMessageCount(userID int) (int, error) {
+	var count int
+	err := r.DB.QueryRow(`
+		SELECT COUNT(*) FROM messages 
+		WHERE to_id = ? AND is_read = 0
+	`, userID).Scan(&count)
+	return count, err
+}
+
+// GetUnreadCountPerConversation returns unread message counts per sender
+func (r *ChatRepository) GetUnreadCountPerConversation(userID int) (map[int]int, error) {
+	rows, err := r.DB.Query(`
+		SELECT from_id, COUNT(*) as unread_count
+		FROM messages 
+		WHERE to_id = ? AND is_read = 0
+		GROUP BY from_id
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[int]int)
+	for rows.Next() {
+		var fromID, count int
+		if err := rows.Scan(&fromID, &count); err != nil {
+			continue
+		}
+		counts[fromID] = count
+	}
+	return counts, nil
+}
+
+// MarkMessagesAsRead marks all messages from a sender to a user as read
+func (r *ChatRepository) MarkMessagesAsRead(userID, senderID int) error {
+	_, err := r.DB.Exec(`
+		UPDATE messages SET is_read = 1 
+		WHERE to_id = ? AND from_id = ? AND is_read = 0
+	`, userID, senderID)
+	return err
+}

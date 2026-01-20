@@ -57,3 +57,18 @@ func (s *ChatService) ProcessGroupMessage(msg models.Message) error {
 	// Save message
 	return s.Repo.SaveGroupMessage(msg)
 }
+
+// GetUnreadMessageCount returns total unread messages for a user
+func (s *ChatService) GetUnreadMessageCount(userID int) (int, error) {
+	return s.Repo.GetUnreadMessageCount(userID)
+}
+
+// GetUnreadCountPerConversation returns unread message counts per sender
+func (s *ChatService) GetUnreadCountPerConversation(userID int) (map[int]int, error) {
+	return s.Repo.GetUnreadCountPerConversation(userID)
+}
+
+// MarkMessagesAsRead marks all messages from a sender to a user as read
+func (s *ChatService) MarkMessagesAsRead(userID, senderID int) error {
+	return s.Repo.MarkMessagesAsRead(userID, senderID)
+}

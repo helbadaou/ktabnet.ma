@@ -9,6 +9,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { Separator } from '../components/ui/separator';
 import { AuthContext } from '../context/AuthContext';
 import { useWebSocket, WebSocketMessage } from '../context/WebSocketContext';
+import { useNotifications } from '../context/NotificationContext';
 import { apiUrl } from '../config';
 import { authFetch } from '../utils/api';
 
@@ -30,6 +31,7 @@ export function Messages() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
   const { status: wsStatus, sendMessage: wsSendMessage, subscribe } = useWebSocket();
+  const { unreadPerConversation, markMessagesAsRead } = useNotifications();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<User[]>([]);
@@ -129,6 +131,10 @@ export function Messages() {
     const fetchMessages = async (userId: string) => {
       setLoadingMessages(true);
       setMessages([]);
+      
+      // Mark messages as read when opening conversation
+      markMessagesAsRead(parseInt(userId));
+      
       try {
         const response = await authFetch(apiUrl(`/api/chat/history?with=${userId}`));
         if (response.ok) {
@@ -231,7 +237,9 @@ export function Messages() {
                 <div className="p-4 text-center text-muted-foreground">Loading...</div>
               ) : conversations.length > 0 ? (
                 <div className="p-4 space-y-2">
-                  {conversations.map((user) => (
+                  {conversations.map((user) => {
+                    const unreadCount = unreadPerConversation[parseInt(user.id)] || 0;
+                    return (
                     <button
                       key={user.id}
                       onClick={() => setSelectedUser(user)}
@@ -241,7 +249,7 @@ export function Messages() {
                         }`}
                     >
                       <div className="flex items-start gap-3">
-                        <Avatar>
+                        <Avatar className="relative">
                           <AvatarImage src={user.avatar} alt={user.fullName} />
                           <AvatarFallback>
                             <UserIcon className="h-4 w-4" />
@@ -249,12 +257,17 @@ export function Messages() {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="font-medium truncate">{user.fullName}</p>
+                            <p className={`font-medium truncate ${unreadCount > 0 ? 'font-bold' : ''}`}>{user.fullName}</p>
+                            {unreadCount > 0 && (
+                              <span className="flex-shrink-0 h-5 min-w-5 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
                     </button>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <div className="p-4 text-center text-muted-foreground h-full flex items-center justify-center">

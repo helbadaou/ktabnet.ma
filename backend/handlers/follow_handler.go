@@ -106,13 +106,16 @@ func (h *FollowHandler) AcceptFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.AcceptFollowRequest(req.SenderID, userID); err != nil {
+	notification, err := h.Service.AcceptFollowRequest(req.SenderID, userID)
+	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
-	// Optional: trigger real-time updates
-	// h.hub.NotifyFollowStatusUpdate(req.SenderID, userID)
+	// Send real-time notification to the requester
+	if h.hub != nil && notification.SenderID > 0 {
+		h.hub.SendNotification(notification, req.SenderID)
+	}
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "Follow accepté")
@@ -154,17 +157,17 @@ func (h *FollowHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
+
 	var payload struct {
 		FollowedID int `json:"followed_id"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		fmt.Println("called : ", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	
+
 	err := h.Service.UnfollowUser(sessionUserID, payload.FollowedID)
 	if err != nil {
 		fmt.Println("called : ", err)

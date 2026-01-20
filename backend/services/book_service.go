@@ -59,3 +59,19 @@ func (s *BookService) SearchBooks(query string) ([]models.BookSearchResult, erro
 	}
 	return s.Repo.SearchBooks(query)
 }
+
+func (s *BookService) CreateExchangeRequest(userID, bookID, offeredBookID int) (int, bool, error) {
+	return s.Repo.CreateExchangeRequest(bookID, offeredBookID, userID)
+}
+
+func (s *BookService) GetUserExchangeRequests(userID int) ([]models.BookExchangeRequest, error) {
+	return s.Repo.GetUserExchangeRequests(userID)
+}
+
+func (s *BookService) UpdateExchangeStatus(exchangeID, userID int, status string) error {
+	return s.Repo.UpdateExchangeStatus(exchangeID, userID, status)
+}
+
+func (s *BookService) CancelExchangeRequest(exchangeID, userID int) error {
+	return s.Repo.CancelExchangeRequest(exchangeID, userID)
+}
