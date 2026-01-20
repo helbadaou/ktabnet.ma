@@ -29,4 +29,5 @@ type User struct {
 	Avatar      string
 	City        string
 	Role        string
+	IsPrivate   bool
 }

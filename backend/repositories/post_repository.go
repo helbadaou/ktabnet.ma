@@ -17,40 +17,40 @@ func NewPostRepository(db *sql.DB) *PostRepository {
 
 // repository/post_repository.go
 func (r *PostRepository) IsUserFollowing(authorID, followerID int) (bool, error) {
-    var exists bool
-    err := r.DB.QueryRow(`
+	var exists bool
+	err := r.DB.QueryRow(`
         SELECT EXISTS(
             SELECT 1 FROM followers 
             WHERE followed_id = ? AND follower_id = ?
         )`, authorID, followerID).Scan(&exists)
-    if err != nil {
-        return false, err
-    }
-    return exists, nil
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func (r *PostRepository) IsAccountPrivate(userID int) (bool, error) {
-    var isPrivate bool
-    err := r.DB.QueryRow(`
-        SELECT is_private FROM users WHERE id = ?
+	var isPrivate bool
+	err := r.DB.QueryRow(`
+        SELECT COALESCE(is_private, 0) FROM users WHERE id = ?
     `, userID).Scan(&isPrivate)
-    if err != nil {
-        return false, err
-    }
-    return isPrivate, nil
+	if err != nil {
+		return false, err
+	}
+	return isPrivate, nil
 }
 
 func (r *PostRepository) GetPublicPostsByUserID(userID int) ([]models.PostFetch, error) {
-    return r.getPostsByPrivacy(userID, "public")
+	return r.getPostsByPrivacy(userID, "public")
 }
 
 func (r *PostRepository) GetFollowersPostsByUserID(userID int) ([]models.PostFetch, error) {
-    return r.getPostsByPrivacy(userID, "followers")
+	return r.getPostsByPrivacy(userID, "followers")
 }
 
 // repository/post_repository.go
 func (r *PostRepository) GetAllPostsByUserID(userID int) ([]models.PostFetch, error) {
-    rows, err := r.DB.Query(`
+	rows, err := r.DB.Query(`
         SELECT 
             p.id, p.author_id, p.content, p.image_url, 
             p.privacy, p.created_at, u.avatar as author_avatar
@@ -59,29 +59,29 @@ func (r *PostRepository) GetAllPostsByUserID(userID int) ([]models.PostFetch, er
         WHERE p.author_id = ?
         ORDER BY p.created_at DESC
     `, userID)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var posts []models.PostFetch
-    for rows.Next() {
-        var post models.PostFetch
-        err := rows.Scan(
-            &post.ID, &post.AuthorID, &post.Content, 
-            &post.ImageURL, &post.Privacy, &post.CreatedAt, &post.AuthorAvatar,
-        )
-        if err != nil {
-            log.Println("❌ scan error:", err)
-            continue
-        }
-        posts = append(posts, post)
-    }
-    return posts, nil
+	var posts []models.PostFetch
+	for rows.Next() {
+		var post models.PostFetch
+		err := rows.Scan(
+			&post.ID, &post.AuthorID, &post.Content,
+			&post.ImageURL, &post.Privacy, &post.CreatedAt, &post.AuthorAvatar,
+		)
+		if err != nil {
+			log.Println("❌ scan error:", err)
+			continue
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
 }
 
 func (r *PostRepository) GetCustomPostsForUser(authorID, viewerID int) ([]models.PostFetch, error) {
-    rows, err := r.DB.Query(`
+	rows, err := r.DB.Query(`
         SELECT 
             p.id, p.author_id, p.content, p.image_url, 
             p.privacy, p.created_at, u.avatar as author_avatar
@@ -93,29 +93,29 @@ func (r *PostRepository) GetCustomPostsForUser(authorID, viewerID int) ([]models
         )
         ORDER BY p.created_at DESC
     `, authorID, viewerID)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var posts []models.PostFetch
-    for rows.Next() {
-        var post models.PostFetch
-        err := rows.Scan(
-            &post.ID, &post.AuthorID, &post.Content, 
-            &post.ImageURL, &post.Privacy, &post.CreatedAt, &post.AuthorAvatar,
-        )
-        if err != nil {
-            log.Println("❌ scan error:", err)
-            continue
-        }
-        posts = append(posts, post)
-    }
-    return posts, nil
+	var posts []models.PostFetch
+	for rows.Next() {
+		var post models.PostFetch
+		err := rows.Scan(
+			&post.ID, &post.AuthorID, &post.Content,
+			&post.ImageURL, &post.Privacy, &post.CreatedAt, &post.AuthorAvatar,
+		)
+		if err != nil {
+			log.Println("❌ scan error:", err)
+			continue
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
 }
 
 func (r *PostRepository) getPostsByPrivacy(userID int, privacy string) ([]models.PostFetch, error) {
-    rows, err := r.DB.Query(`
+	rows, err := r.DB.Query(`
         SELECT 
             p.id, p.author_id, p.content, p.image_url, 
             p.privacy, p.created_at, u.avatar as author_avatar
@@ -124,25 +124,25 @@ func (r *PostRepository) getPostsByPrivacy(userID int, privacy string) ([]models
         WHERE p.author_id = ? AND p.privacy = ?
         ORDER BY p.created_at DESC
     `, userID, privacy)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var posts []models.PostFetch
-    for rows.Next() {
-        var post models.PostFetch
-        err := rows.Scan(
-            &post.ID, &post.AuthorID, &post.Content, 
-            &post.ImageURL, &post.Privacy, &post.CreatedAt, &post.AuthorAvatar,
-        )
-        if err != nil {
-            log.Println("❌ scan error:", err)
-            continue
-        }
-        posts = append(posts, post)
-    }
-    return posts, nil
+	var posts []models.PostFetch
+	for rows.Next() {
+		var post models.PostFetch
+		err := rows.Scan(
+			&post.ID, &post.AuthorID, &post.Content,
+			&post.ImageURL, &post.Privacy, &post.CreatedAt, &post.AuthorAvatar,
+		)
+		if err != nil {
+			log.Println("❌ scan error:", err)
+			continue
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
 }
 
 func (r *PostRepository) CreatePost(post models.PostFetch, recipients []int) error {
@@ -188,7 +188,7 @@ func (r *PostRepository) CreatePost(post models.PostFetch, recipients []int) err
 }
 
 func (r *PostRepository) GetPostsForUser(userID int) ([]models.PostFetch, error) {
-    rows, err := r.DB.Query(`
+	rows, err := r.DB.Query(`
         SELECT 
             p.id, 
             p.author_id, 
@@ -205,30 +205,30 @@ func (r *PostRepository) GetPostsForUser(userID int) ([]models.PostFetch, error)
         ORDER BY p.created_at DESC
     `, userID, userID)
 
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var posts []models.PostFetch
-    for rows.Next() {
-        var post models.PostFetch
-        err := rows.Scan(
-            &post.ID,
-            &post.AuthorID,
-            &post.Content,
-            &post.ImageURL,
-            &post.Privacy,
-            &post.CreatedAt,
-            &post.AuthorAvatar,
-        )
-        if err != nil {
-            log.Println("❌ scan error:", err)
-            continue
-        }
-        posts = append(posts, post)
-    }
-    return posts, nil
+	var posts []models.PostFetch
+	for rows.Next() {
+		var post models.PostFetch
+		err := rows.Scan(
+			&post.ID,
+			&post.AuthorID,
+			&post.Content,
+			&post.ImageURL,
+			&post.Privacy,
+			&post.CreatedAt,
+			&post.AuthorAvatar,
+		)
+		if err != nil {
+			log.Println("❌ scan error:", err)
+			continue
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
 }
 
 func (r *PostRepository) GetCommentsByPost(postID string) ([]models.CommentWithUser, error) {

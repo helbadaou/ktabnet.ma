@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"social/models"
 )
@@ -235,4 +236,34 @@ func (r *BookRepository) AddImage(bookID int, imageURL string, isPrimary bool) e
 func (r *BookRepository) RemoveImage(imageID int) error {
 	_, err := r.DB.Exec(`DELETE FROM book_images WHERE id = ?`, imageID)
 	return err
+}
+
+func (r *BookRepository) SearchBooks(query string) ([]models.BookSearchResult, error) {
+	search := "%" + strings.ToLower(query) + "%"
+	rows, err := r.DB.Query(`
+		SELECT b.id, b.title, b.author, b.genre, b.city,
+		       (SELECT image_url FROM book_images WHERE book_id = b.id ORDER BY order_index LIMIT 1) as image
+		FROM books b
+		WHERE b.available = 1 AND (LOWER(b.title) LIKE ? OR LOWER(b.author) LIKE ?)
+		ORDER BY b.created_at DESC
+		LIMIT 10
+	`, search, search)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.BookSearchResult
+	for rows.Next() {
+		var book models.BookSearchResult
+		var image sql.NullString
+		if err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Genre, &book.City, &image); err != nil {
+			continue
+		}
+		if image.Valid {
+			book.Image = image.String
+		}
+		results = append(results, book)
+	}
+	return results, nil
 }

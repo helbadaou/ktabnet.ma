@@ -26,6 +26,12 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *Handler) ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	// Try to get token from query parameter first (for WebSocket connections)
+	tokenFromQuery := r.URL.Query().Get("token")
+	if tokenFromQuery != "" {
+		r.Header.Set("Authorization", "Bearer "+tokenFromQuery)
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error:", err)
@@ -47,9 +53,6 @@ func (h *Handler) ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	hub.Register <- client
 
-
 	go client.writePump()
 	go client.readPump(hub)
 }
-
-

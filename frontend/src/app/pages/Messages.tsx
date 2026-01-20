@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Send, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
@@ -29,6 +29,7 @@ export function Messages() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -37,6 +38,33 @@ export function Messages() {
   const [newMessage, setNewMessage] = useState('');
   const [ws, setWs] = useState<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Handle URL query parameter ?user=id
+  useEffect(() => {
+    const userIdFromUrl = searchParams.get('user');
+    if (userIdFromUrl && currentUser) {
+      // Fetch user info from API
+      const fetchUserInfo = async () => {
+        try {
+          const res = await authFetch(apiUrl(`/api/users/${userIdFromUrl}`));
+          if (res.ok) {
+            const userData = await res.json();
+            const userFromUrl: User = {
+              id: String(userData.id),
+              fullName: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'User',
+              avatar: userData.avatar || '',
+            };
+            setSelectedUser(userFromUrl);
+            // Clear the URL parameter
+            setSearchParams({});
+          }
+        } catch (err) {
+          console.error('Error fetching user info:', err);
+        }
+      };
+      fetchUserInfo();
+    }
+  }, [searchParams, currentUser, setSearchParams]);
 
   // Handle navigation state from BookDetail page
   useEffect(() => {
@@ -55,7 +83,14 @@ export function Messages() {
   useEffect(() => {
     if (selectedUser && currentUser) {
       console.log('Attempting to connect to WebSocket...');
-      const socket = new WebSocket(wsUrl('/ws'));
+      
+      // Get auth token for WebSocket authentication
+      const token = localStorage.getItem('auth_token');
+      const wsUrlWithAuth = token 
+        ? `${wsUrl('/ws')}?token=${encodeURIComponent(token)}`
+        : wsUrl('/ws');
+      
+      const socket = new WebSocket(wsUrlWithAuth);
       console.log('WebSocket created for user:', currentUser.id);
       setWs(socket);
 
@@ -68,6 +103,12 @@ export function Messages() {
           const message = JSON.parse(event.data);
           const isMine = String(message.from) === String(currentUser.id);
           const id = message.id || `${message.timestamp}-${Math.random().toString(36).slice(2, 8)}`;
+          
+          // Skip if this is our own message (already added via optimistic update)
+          if (isMine) {
+            return;
+          }
+          
           setMessages((prevMessages) => [
             ...prevMessages,
             { id, content: message.content, isMine, timestamp: new Date(message.timestamp) },
@@ -78,7 +119,7 @@ export function Messages() {
       };
 
       socket.onclose = (event) => {
-        console.log('WebSocket disconnected:', event);
+        console.log('WebSocket disconnected:', event.code, event.reason);
       };
 
       socket.onerror = (error) => {
@@ -163,12 +204,14 @@ export function Messages() {
   const handleSend = () => {
     if (newMessage.trim() && selectedUser && ws && currentUser) {
       const fromId = parseInt(String(currentUser.id));
+      const messageContent = newMessage.trim();
+      const timestamp = new Date().toISOString();
       const payload = {
         type: 'private',
         from: fromId,
         to: parseInt(selectedUser.id),
-        content: newMessage,
-        timestamp: new Date().toISOString(),
+        content: messageContent,
+        timestamp: timestamp,
       };
       try {
         if (ws.readyState !== WebSocket.OPEN) {
@@ -176,7 +219,14 @@ export function Messages() {
           return;
         }
         ws.send(JSON.stringify(payload));
-        // optimistic update
+        // Optimistic update - add message to UI immediately
+        const optimisticMessage: Message = {
+          id: `${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
+          content: messageContent,
+          timestamp: new Date(timestamp),
+          isMine: true,
+        };
+        setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
         setNewMessage('');
       } catch (err) {
         console.error('Failed to send message', err);

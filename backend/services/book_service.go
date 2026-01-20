@@ -52,3 +52,10 @@ func (s *BookService) AddImage(bookID int, imageURL string, isPrimary bool) erro
 func (s *BookService) RemoveImage(imageID int) error {
 	return s.Repo.RemoveImage(imageID)
 }
+
+func (s *BookService) SearchBooks(query string) ([]models.BookSearchResult, error) {
+	if query == "" {
+		return nil, nil
+	}
+	return s.Repo.SearchBooks(query)
+}

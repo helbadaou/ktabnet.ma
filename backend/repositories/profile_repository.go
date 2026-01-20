@@ -17,7 +17,7 @@ func NewProfileRepository(db *sql.DB) *SqliteProfileRepo {
 func (r *SqliteProfileRepo) GetByID(userID int) (*models.User, error) {
 	query := `
 		SELECT id, email, first_name, last_name, date_of_birth,
-		       nickname, about, avatar, city
+		       nickname, about, avatar, city, COALESCE(role, 'user') as role, COALESCE(is_private, 0) as is_private
 		FROM users
 		WHERE id = ?;
 	`
@@ -33,6 +33,8 @@ func (r *SqliteProfileRepo) GetByID(userID int) (*models.User, error) {
 		&user.About,
 		&user.Avatar,
 		&user.City,
+		&user.Role,
+		&user.IsPrivate,
 	)
 
 	if err != nil {
@@ -44,7 +46,7 @@ func (r *SqliteProfileRepo) GetByID(userID int) (*models.User, error) {
 
 func (r *SqliteProfileRepo) FindByID(userID int) (*models.Profile, error) {
 	row := r.db.QueryRow(`
-		SELECT id, first_name, last_name, nickname, email, about, avatar, date_of_birth, is_private
+		SELECT id, first_name, last_name, nickname, email, about, avatar, date_of_birth, COALESCE(is_private, 0) as is_private
 		FROM users WHERE id = ?
 	`, userID)
 

@@ -54,3 +54,12 @@ type BookImage struct {
 	IsPrimary bool   `json:"is_primary"`
 	Order     int    `json:"order_index"`
 }
+
+type BookSearchResult struct {
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Genre  string `json:"genre"`
+	City   string `json:"city"`
+	Image  string `json:"image"`
+}

@@ -103,6 +103,7 @@ func main() {
 
 	// Book routes
 	mux.Handle("/api/books", sessionService.Middleware(http.HandlerFunc(bookHandler.BooksHandler)))
+	mux.Handle("/api/books/search", sessionService.Middleware(http.HandlerFunc(bookHandler.SearchBooksHandler)))
 	mux.Handle("/api/books/", sessionService.Middleware(http.HandlerFunc(bookHandler.GetBookHandler)))
 	mux.Handle("/api/my-books", sessionService.Middleware(http.HandlerFunc(bookHandler.GetMyBooksHandler)))
 

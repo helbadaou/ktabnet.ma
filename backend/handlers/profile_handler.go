@@ -30,6 +30,7 @@ type meResponse struct {
 	Avatar    string `json:"avatar"`
 	City      string `json:"city"`
 	Role      string `json:"role"`
+	IsPrivate bool   `json:"is_private"`
 }
 
 func NewProfileHandler(service *services.ProfileService, sessionService *services.SessionService, hub *hub.Hub) *ProfileHandler {
@@ -55,6 +56,7 @@ func (h *ProfileHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) 
 	user, err := h.profileService.ProfileRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			fmt.Println("User not found:", err)
 			http.Error(w, "User not found", http.StatusNotFound)
 		} else {
 			fmt.Println("Error fetching user:", err)
@@ -100,6 +102,7 @@ func (h *ProfileHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Reque
 
 	user, err := h.profileService.GetUserProfile(requesterID, targetID)
 	if err != nil {
+		fmt.Println("Error fetching user profile:", err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -176,6 +179,7 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		Avatar:    user.Avatar,
 		City:      user.City,
 		Role:      user.Role,
+		IsPrivate: user.IsPrivate,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

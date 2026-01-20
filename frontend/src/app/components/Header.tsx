@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, MessageSquare, PlusCircle, User, Menu, LogOut, Plus } from 'lucide-react';
 import { Button } from './ui/button';
+import { SearchBar } from './SearchBar';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
@@ -86,6 +87,11 @@ export function Header() {
           <BookOpen className="h-6 w-6 text-primary" />
           <span className="text-xl font-semibold">KtabNet.ma</span>
         </Link>
+
+        {/* Search Bar - Desktop */}
+        <div className="hidden md:block">
+          <SearchBar />
+        </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">

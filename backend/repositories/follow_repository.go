@@ -25,7 +25,7 @@ func (repo *FollowRepository) FollowExists(followerID, followedID int) (bool, er
 func (repo *FollowRepository) IsPrivate(followedID int) (bool, error) {
 	var isPrivate bool
 	err := repo.DB.QueryRow(`
-		SELECT is_private FROM users WHERE id = ?
+		SELECT COALESCE(is_private, 0) FROM users WHERE id = ?
 	`, followedID).Scan(&isPrivate)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, errors.New("user not found")

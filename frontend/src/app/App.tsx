@@ -6,6 +6,7 @@ import { BookDetail } from './pages/BookDetail';
 import { Books } from './pages/Books';
 import { Messages } from './pages/Messages';
 import { Profile } from './pages/Profile';
+import { UserProfile } from './pages/UserProfile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Admin } from './pages/Admin';
@@ -42,6 +43,7 @@ function AppContent() {
             <Route path="/books/:id" element={<BookDetail />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:id" element={<UserProfile />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Route>
         </Routes>
