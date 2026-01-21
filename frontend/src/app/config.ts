@@ -12,7 +12,7 @@ const getApiBase = () => {
   }
   
   // Production - use hosted backend
-  return 'https://backend-cool-wind8.fly.dev';
+  return 'https://ktabnet-backend.fly.dev';
 };
 
 export const API_BASE = getApiBase();
