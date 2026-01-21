@@ -13,6 +13,7 @@ import (
 	"social/hub"
 	"social/models"
 	"social/services"
+	"social/utils"
 )
 
 type BookHandler struct {
@@ -82,9 +83,6 @@ func (h *BookHandler) CreateBookHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Create uploads/books directory if needed
-	os.MkdirAll("uploads/books", os.ModePerm)
-
 	// Handle multiple images
 	files := r.MultipartForm.File["images"]
 	for i, fileHeader := range files {
@@ -95,7 +93,7 @@ func (h *BookHandler) CreateBookHandler(w http.ResponseWriter, r *http.Request) 
 		defer file.Close()
 
 		filename := fmt.Sprintf("%d_%d_%s", bookID, time.Now().UnixNano(), fileHeader.Filename)
-		dst := fmt.Sprintf("uploads/books/%s", filename)
+		dst := utils.GetUploadPath("books/" + filename)
 
 		outFile, err := os.Create(dst)
 		if err != nil {

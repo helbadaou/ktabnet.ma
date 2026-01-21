@@ -67,7 +67,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		defer file.Close()
 
-		avatarPath := "uploads/avatars/" + header.Filename
+		avatarPath := utils.GetUploadPath("avatars/" + header.Filename)
 		out, err := os.Create(avatarPath)
 		if err != nil {
 			http.Error(w, "Unable to save avatar", http.StatusInternalServerError)
@@ -80,7 +80,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to write avatar", http.StatusInternalServerError)
 			return
 		}
-		form.Avatar = avatarPath
+		form.Avatar = "/uploads/avatars/" + header.Filename
 	} else {
 		form.Avatar = ""
 	}

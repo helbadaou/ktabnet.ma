@@ -15,16 +15,21 @@ import (
 func main() {
 	sqlite.InitDB()
 	db := sqlite.GetDB()
-	folderName := []string{
-		"uploads/avatars",
-		"uploads/group_posts",
+
+	// Create upload directories using config paths
+	folderNames := []string{
+		utils.GetUploadPath("avatars"),
+		utils.GetUploadPath("group_posts"),
+		utils.GetUploadPath("books"),
 	}
 
-	for _, folder := range folderName {
+	fmt.Println("📂 Data directory:", utils.DataDir)
+	for _, folder := range folderNames {
 		if err := os.MkdirAll(folder, os.ModePerm); err != nil {
 			fmt.Printf("❌ Failed to create '%s': %v\n", folder, err)
 			return
 		}
+		fmt.Printf("✅ Created folder: %s\n", folder)
 	}
 
 	authRepo := repositories.NewUserRepository(db)
@@ -124,7 +129,8 @@ func main() {
 	})
 
 	// Static files route
-	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+	uploadsDir := utils.GetUploadPath("")
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsDir))))
 
 	// 7. Setup Middleware
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
