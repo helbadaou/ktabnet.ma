@@ -25,17 +25,17 @@ type ProfileHandler struct {
 }
 
 type meResponse struct {
-	ID        int    `json:"id"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Nickname  string `json:"nickname"`
-	Avatar    string `json:"avatar"`
-	City      string `json:"city"`
-	Role      string `json:"role"`
-	IsPrivate bool   `json:"is_private"`
-	IsBanned  bool   `json:"is_banned"`
-	About     string `json:"about"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Nickname    string `json:"nickname"`
+	Avatar      string `json:"avatar"`
+	City        string `json:"city"`
+	Role        string `json:"role"`
+	IsPrivate   bool   `json:"is_private"`
+	IsBanned    bool   `json:"is_banned"`
+	About       string `json:"about"`
 	DateOfBirth string `json:"date_of_birth"`
 }
 
@@ -177,17 +177,17 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	user.Avatar = utils.PrepareAvatarURL(user.Avatar)
 
 	resp := meResponse{
-		ID:        user.ID,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Nickname:  user.Nickname,
-		Avatar:    user.Avatar,
-		City:      user.City,
-		Role:      user.Role,
-		IsPrivate: user.IsPrivate,
-		IsBanned:  user.IsBanned,
-		About:     user.About,
+		ID:          user.ID,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Nickname:    user.Nickname,
+		Avatar:      user.Avatar,
+		City:        user.City,
+		Role:        user.Role,
+		IsPrivate:   user.IsPrivate,
+		IsBanned:    user.IsBanned,
+		About:       user.About,
 		DateOfBirth: user.DateOfBirth,
 	}
 
@@ -214,6 +214,12 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	oldUser, err := h.profileService.ProfileRepo.GetByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to load profile", http.StatusInternalServerError)
 		return
 	}
 
@@ -249,6 +255,18 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Avatar != "" && oldUser.Avatar != "" && oldUser.Avatar != req.Avatar {
+		oldPath := ""
+		if strings.HasPrefix(oldUser.Avatar, "/uploads/") {
+			oldPath = strings.TrimPrefix(oldUser.Avatar, "/uploads/")
+		} else if idx := strings.Index(oldUser.Avatar, "/uploads/"); idx >= 0 {
+			oldPath = oldUser.Avatar[idx+len("/uploads/"):]
+		}
+		if strings.HasPrefix(oldPath, "avatars/") {
+			_ = os.Remove(utils.GetUploadPath(oldPath))
+		}
+	}
+
 	updatedUser, err := h.profileService.ProfileRepo.GetByID(userID)
 	if err != nil {
 		http.Error(w, "Failed to load profile", http.StatusInternalServerError)
@@ -257,17 +275,17 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	updatedUser.Avatar = utils.PrepareAvatarURL(updatedUser.Avatar)
 
 	resp := meResponse{
-		ID:        updatedUser.ID,
-		Email:     updatedUser.Email,
-		FirstName: updatedUser.FirstName,
-		LastName:  updatedUser.LastName,
-		Nickname:  updatedUser.Nickname,
-		Avatar:    updatedUser.Avatar,
-		City:      updatedUser.City,
-		Role:      updatedUser.Role,
-		IsPrivate: updatedUser.IsPrivate,
-		IsBanned:  updatedUser.IsBanned,
-		About:     updatedUser.About,
+		ID:          updatedUser.ID,
+		Email:       updatedUser.Email,
+		FirstName:   updatedUser.FirstName,
+		LastName:    updatedUser.LastName,
+		Nickname:    updatedUser.Nickname,
+		Avatar:      updatedUser.Avatar,
+		City:        updatedUser.City,
+		Role:        updatedUser.Role,
+		IsPrivate:   updatedUser.IsPrivate,
+		IsBanned:    updatedUser.IsBanned,
+		About:       updatedUser.About,
 		DateOfBirth: updatedUser.DateOfBirth,
 	}
 
