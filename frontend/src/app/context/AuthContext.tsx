@@ -10,6 +10,7 @@ interface User {
   nickname: string;
   avatar: string;
   role: string;
+  is_banned: boolean;
 }
 
 interface AuthContextType {
@@ -17,7 +18,9 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   isAdmin: boolean;
+  isFullAdmin: boolean;
   login: (data: { token: string; user: User }) => void;
+  updateUser: (updates: Partial<User>) => void;
   logout: () => Promise<void>;
 }
 
@@ -66,6 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+  };
+
   const logout = async () => {
     try {
       await authFetch(apiUrl('/api/logout'), { method: 'POST' });
@@ -77,10 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'moderator';
+  const isFullAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, isAdmin, isFullAdmin, login, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

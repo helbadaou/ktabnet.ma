@@ -54,6 +54,7 @@ func main() {
 	bookService := services.NewBookService(bookRepo)
 
 	hub := hubS.NewHub(chatService)
+	hub.SetProfileService(profileService)
 	go hub.Run()
 
 	// 5. Initialize Handlers
@@ -62,9 +63,10 @@ func main() {
 	followHandler := handlers.NewFollowHandler(followService, sessionService, hub)
 	hubHandler := hubS.NewHandler(authService, sessionService, hub)
 	notifHandler := handlers.NewNotificationHandler(notifService, sessionService)
-	postHandler := handlers.NewPostHandler(postService, sessionService)
+	postHandler := handlers.NewPostHandler(postService, sessionService, profileService)
 	profileHandler := handlers.NewProfileHandler(profileService, sessionService, hub)
-	bookHandler := handlers.NewBookHandler(bookService, sessionService, notifService, hub)
+	bookHandler := handlers.NewBookHandler(bookService, sessionService, notifService, hub, profileService)
+	adminHandler := handlers.NewAdminHandler(profileService, sessionService, bookService)
 
 	// 6. Setup Router
 	mux := http.NewServeMux()
@@ -80,6 +82,7 @@ func main() {
 	mux.Handle("/api/search", sessionService.Middleware(http.HandlerFunc(profileHandler.SearchUsers)))
 	mux.Handle("/api/user/toggle-privacy", sessionService.Middleware(http.HandlerFunc(profileHandler.TogglePrivacy)))
 	mux.Handle("/api/auth/me", sessionService.Middleware(http.HandlerFunc(profileHandler.GetMe)))
+	mux.Handle("/api/profile/update", sessionService.Middleware(http.HandlerFunc(profileHandler.UpdateProfile)))
 
 	// Post routes
 	mux.Handle("/api/posts", sessionService.Middleware(http.HandlerFunc(postHandler.PostsHandler)))
@@ -119,6 +122,11 @@ func main() {
 	mux.Handle("/api/exchange-requests", sessionService.Middleware(http.HandlerFunc(bookHandler.GetExchangeRequestsHandler)))
 	mux.Handle("/api/exchange-requests/update", sessionService.Middleware(http.HandlerFunc(bookHandler.UpdateExchangeStatusHandler)))
 	mux.Handle("/api/exchange-requests/cancel", sessionService.Middleware(http.HandlerFunc(bookHandler.CancelExchangeHandler)))
+
+	// Admin routes (protected by AdminOnly middleware)
+	mux.Handle("/api/admin/users", sessionService.Middleware(adminHandler.AdminOnly(adminHandler.GetAllUsers)))
+	mux.Handle("/api/admin/users/", sessionService.Middleware(adminHandler.AdminOnlyStrict(adminHandler.UserHandler)))
+	mux.Handle("/api/admin/books/", sessionService.Middleware(adminHandler.AdminOnly(adminHandler.DeleteBook)))
 
 	// Group routes
 

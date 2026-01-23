@@ -36,6 +36,13 @@ func (a *AuthService) Register(form models.RegisterRequest) error {
 		return err
 	}
 
+	// Check if this is the first user - make them admin
+	role := "user"
+	userCount, err := a.UserRepo.GetUserCount()
+	if err == nil && userCount == 0 {
+		role = "admin"
+	}
+
 	user := &models.User{
 		Email:       form.Email,
 		Password:    string(hashedPassword),
@@ -46,6 +53,7 @@ func (a *AuthService) Register(form models.RegisterRequest) error {
 		About:       form.About,
 		Avatar:      form.Avatar,
 		City:        form.City,
+		Role:        role,
 	}
 
 	return a.UserRepo.CreateUser(user)

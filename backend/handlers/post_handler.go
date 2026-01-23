@@ -16,12 +16,13 @@ import (
 )
 
 type PostHandler struct {
-	service *services.PostService
-	session *services.SessionService
+	postService    *services.PostService
+	session        *services.SessionService
+	profileService *services.ProfileService
 }
 
-func NewPostHandler(service *services.PostService, session *services.SessionService) *PostHandler {
-	return &PostHandler{service: service, session: session}
+func NewPostHandler(postService *services.PostService, session *services.SessionService, profileService *services.ProfileService) *PostHandler {
+	return &PostHandler{postService: postService, session: session, profileService: profileService}
 }
 
 func (h *PostHandler) GetUserPostsHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +39,7 @@ func (h *PostHandler) GetUserPostsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	posts, err := h.service.GetUserPosts(userID, currentUser)
+	posts, err := h.postService.GetUserPosts(userID, currentUser)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
@@ -68,6 +69,12 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 	userID, ok := h.session.GetUserIDFromSession(w, r)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is banned
+	if h.profileService != nil && h.profileService.IsBanned(userID) {
+		http.Error(w, "You are banned and cannot create posts", http.StatusForbidden)
 		return
 	}
 
@@ -118,7 +125,7 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	err = h.service.CreatePost(userID, content, imageURL, privacy, recipientIDs)
+	err = h.postService.CreatePost(userID, content, imageURL, privacy, recipientIDs)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Failed to create post", http.StatusInternalServerError)
@@ -134,7 +141,7 @@ func (h *PostHandler) GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.service.GetPostsForUser(userID)
+	posts, err := h.postService.GetPostsForUser(userID)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
@@ -207,7 +214,7 @@ func (h *PostHandler) CreateCommentHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = h.service.CreateComment(postID, userID, content, image)
+	err = h.postService.CreateComment(postID, userID, content, image)
 	if err != nil {
 		http.Error(w, "Erreur base de données", http.StatusInternalServerError)
 		return
@@ -229,7 +236,7 @@ func (h *PostHandler) GetCommentsByPostHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	comments, err := h.service.GetCommentsByPost(postID)
+	comments, err := h.postService.GetCommentsByPost(postID)
 	if err != nil {
 		http.Error(w, "Erreur base de données", http.StatusInternalServerError)
 		return

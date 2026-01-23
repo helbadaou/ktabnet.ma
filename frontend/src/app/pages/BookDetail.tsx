@@ -192,7 +192,8 @@ export function BookDetail() {
   const toAbsolute = (path: string) => absoluteUrl(path);
   const currentUserId = typeof user?.id === 'string' ? Number(user.id) : user?.id;
   const isOwner = currentUserId === (book.owner_id || book.owner?.id);
-  const canExchange = Boolean(book.available && !isOwner && currentUserId);
+  const isBanned = Boolean(user?.is_banned);
+  const canExchange = Boolean(book.available && !isOwner && currentUserId && !isBanned);
 
   const images = book.images && book.images.length > 0
     ? book.images
@@ -343,6 +344,8 @@ export function BookDetail() {
                   <div className="grid gap-3">
                     <Button
                       className="w-full"
+                      disabled={isBanned}
+                      title={isBanned ? 'Banned users cannot send messages' : undefined}
                       onClick={() => navigate('/messages', {
                         state: {
                           selectedUserId: book.owner_id || book.owner?.id,
@@ -370,6 +373,9 @@ export function BookDetail() {
                         <Repeat className="mr-2 h-4 w-4" />
                         Request Exchange
                       </Button>
+                    )}
+                    {isBanned && (
+                      <p className="text-xs text-muted-foreground">Your account is banned. You can browse books only.</p>
                     )}
                   </div>
                 )}
@@ -448,4 +454,3 @@ export function BookDetail() {
     </>
   );
 }
-

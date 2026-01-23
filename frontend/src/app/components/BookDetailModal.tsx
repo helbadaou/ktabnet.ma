@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dial
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, MessageSquare, MapPin } from 'lucide-react';
 import { absoluteUrl } from '../config';
+import { useAuth } from '../context/AuthContext';
 
 interface Book {
   id: number;
@@ -31,6 +32,8 @@ export default function BookDetailModal({ book, onClose }: { book: Book; onClose
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [ownerName, setOwnerName] = useState<string>('');
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isBanned = Boolean(user?.is_banned);
   const currentImage = book.images?.[currentImageIndex] || '/placeholder-book.png';
 
   const asAbsoluteImage = (path: string) => absoluteUrl(path);
@@ -122,7 +125,7 @@ export default function BookDetailModal({ book, onClose }: { book: Book; onClose
             )}
 
             {book.available && (
-              <Button onClick={handleChatAboutBook} className="w-full">
+              <Button onClick={handleChatAboutBook} className="w-full" disabled={isBanned} title={isBanned ? 'Banned users cannot send messages' : undefined}>
                 <MessageSquare className="w-4 h-4 mr-2" /> Chat About This Book
               </Button>
             )}

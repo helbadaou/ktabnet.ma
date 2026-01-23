@@ -30,4 +30,5 @@ type User struct {
 	City        string
 	Role        string
 	IsPrivate   bool
+	IsBanned    bool
 }

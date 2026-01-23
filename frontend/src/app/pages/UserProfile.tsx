@@ -9,6 +9,7 @@ import { BookCard } from '../components/BookCard';
 import { Book } from '../data/mockData';
 import { apiUrl, absoluteUrl } from '../config';
 import { authFetch } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 interface UserProfileData {
   id: number;
@@ -29,6 +30,8 @@ interface UserProfileData {
 export function UserProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const isBanned = Boolean(currentUser?.is_banned);
   const [user, setUser] = useState<UserProfileData | null>(null);
   const [userBooks, setUserBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +107,7 @@ export function UserProfile() {
   }, [id, navigate]);
 
   const handleSendMessage = () => {
+    if (isBanned) return;
     navigate(`/messages?user=${id}`);
   };
 
@@ -158,7 +162,7 @@ export function UserProfile() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleSendMessage}>
+              <Button onClick={handleSendMessage} disabled={isBanned} title={isBanned ? 'Banned users cannot send messages' : undefined}>
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Message
               </Button>

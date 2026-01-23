@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"social/hub"
 	"social/models"
@@ -31,6 +34,9 @@ type meResponse struct {
 	City      string `json:"city"`
 	Role      string `json:"role"`
 	IsPrivate bool   `json:"is_private"`
+	IsBanned  bool   `json:"is_banned"`
+	About     string `json:"about"`
+	DateOfBirth string `json:"date_of_birth"`
 }
 
 func NewProfileHandler(service *services.ProfileService, sessionService *services.SessionService, hub *hub.Hub) *ProfileHandler {
@@ -180,6 +186,89 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		City:      user.City,
 		Role:      user.Role,
 		IsPrivate: user.IsPrivate,
+		IsBanned:  user.IsBanned,
+		About:     user.About,
+		DateOfBirth: user.DateOfBirth,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := h.sessionService.GetUserIDFromSession(w, r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if h.profileService != nil && h.profileService.IsBanned(userID) {
+		http.Error(w, "You are banned and cannot update your profile", http.StatusForbidden)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	req := models.UpdateProfileRequest{
+		FirstName:   r.FormValue("first_name"),
+		LastName:    r.FormValue("last_name"),
+		Nickname:    r.FormValue("nickname"),
+		About:       r.FormValue("about"),
+		City:        r.FormValue("city"),
+		DateOfBirth: r.FormValue("date_of_birth"),
+	}
+
+	if file, header, err := r.FormFile("avatar"); err == nil {
+		defer file.Close()
+		filename := fmt.Sprintf("%d_%d_%s", userID, time.Now().UnixNano(), header.Filename)
+		avatarPath := utils.GetUploadPath("avatars/" + filename)
+		out, err := os.Create(avatarPath)
+		if err != nil {
+			http.Error(w, "Unable to save avatar", http.StatusInternalServerError)
+			return
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, file); err != nil {
+			http.Error(w, "Failed to write avatar", http.StatusInternalServerError)
+			return
+		}
+		req.Avatar = "/uploads/avatars/" + filename
+	}
+
+	if err := h.profileService.UpdateProfile(userID, req); err != nil {
+		http.Error(w, "Failed to update profile", http.StatusInternalServerError)
+		return
+	}
+
+	updatedUser, err := h.profileService.ProfileRepo.GetByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to load profile", http.StatusInternalServerError)
+		return
+	}
+	updatedUser.Avatar = utils.PrepareAvatarURL(updatedUser.Avatar)
+
+	resp := meResponse{
+		ID:        updatedUser.ID,
+		Email:     updatedUser.Email,
+		FirstName: updatedUser.FirstName,
+		LastName:  updatedUser.LastName,
+		Nickname:  updatedUser.Nickname,
+		Avatar:    updatedUser.Avatar,
+		City:      updatedUser.City,
+		Role:      updatedUser.Role,
+		IsPrivate: updatedUser.IsPrivate,
+		IsBanned:  updatedUser.IsBanned,
+		About:     updatedUser.About,
+		DateOfBirth: updatedUser.DateOfBirth,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

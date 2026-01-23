@@ -30,6 +30,7 @@ interface User {
 export function Messages() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
+  const isBanned = Boolean(currentUser?.is_banned);
   const { status: wsStatus, sendMessage: wsSendMessage, subscribe } = useWebSocket();
   const { unreadPerConversation, markMessagesAsRead } = useNotifications();
   const location = useLocation();
@@ -189,6 +190,7 @@ export function Messages() {
   }, [currentUser]);
 
   const handleSend = useCallback(() => {
+    if (isBanned) return;
     if (newMessage.trim() && selectedUser && currentUser && wsStatus === 'connected') {
       const fromId = parseInt(String(currentUser.id));
       const messageContent = newMessage.trim();
@@ -214,7 +216,7 @@ export function Messages() {
         setNewMessage('');
       }
     }
-  }, [newMessage, selectedUser, currentUser, wsStatus, wsSendMessage]);
+  }, [isBanned, newMessage, selectedUser, currentUser, wsStatus, wsSendMessage]);
 
   if (!currentUser) {
     return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -224,6 +226,11 @@ export function Messages() {
     <div className="w-full py-8 flex justify-center mx-auto">
       <div className="w-full max-w-6xl px-4 mx-auto">
         <h1 className="text-4xl mb-6">Messages</h1>
+        {isBanned && (
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+            Your account is banned. Messaging is disabled.
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
           {/* Conversations List */}
@@ -346,8 +353,9 @@ export function Messages() {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      disabled={isBanned}
                     />
-                    <Button onClick={handleSend}>
+                    <Button onClick={handleSend} disabled={isBanned}>
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>

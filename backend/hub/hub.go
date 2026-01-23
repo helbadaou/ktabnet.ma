@@ -18,6 +18,7 @@ type Hub struct {
 	groupMembersCache map[int][]int
 	cacheMutex        sync.RWMutex
 	messageService    *services.ChatService
+	profileService    *services.ProfileService
 }
 
 func NewHub(messageService *services.ChatService) *Hub {
@@ -29,6 +30,10 @@ func NewHub(messageService *services.ChatService) *Hub {
 		groupMembersCache: make(map[int][]int),
 		messageService:    messageService,
 	}
+}
+
+func (h *Hub) SetProfileService(profileService *services.ProfileService) {
+	h.profileService = profileService
 }
 
 func (h *Hub) Run() {
@@ -52,6 +57,22 @@ func (h *Hub) Run() {
 		case msg := <-h.Broadcast:
 
 			fmt.Printf("📢 Broadcasting message: %+v\n", msg)
+
+			// Check if sender is banned
+			if h.profileService != nil && h.profileService.IsBanned(msg.From) {
+				fmt.Printf("🚫 User %d is banned, message blocked\n", msg.From)
+				// Send error message back to sender
+				if sender, ok := h.Clients[msg.From]; ok {
+					errorMsg := map[string]string{
+						"type":  "error",
+						"error": "You are banned and cannot send messages",
+					}
+					if errorBytes, err := json.Marshal(errorMsg); err == nil {
+						sender.Send <- errorBytes
+					}
+				}
+				continue
+			}
 
 			msgBytes, err := json.Marshal(msg)
 			if err != nil {

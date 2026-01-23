@@ -11,7 +11,8 @@ import {
   Eye,
   ArrowLeft,
   RefreshCw,
-  UserCog
+  UserCog,
+  Ban
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -73,12 +74,13 @@ interface AdminUser {
   avatar: string;
   city: string;
   role: string;
+  is_banned: boolean;
   created_at: string;
 }
 
 export function Admin() {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isFullAdmin } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,6 +187,21 @@ export function Admin() {
       }
     } catch (error) {
       console.error('Failed to delete user:', error);
+    }
+  };
+
+  const toggleBanUser = async (userId: number, isBanned: boolean) => {
+    try {
+      const response = await authFetch(apiUrl(`/api/admin/users/${userId}/ban`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_banned: isBanned }),
+      });
+      if (response.ok) {
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error('Failed to ban/unban user:', error);
     }
   };
 
@@ -486,7 +503,14 @@ export function Admin() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((u) => (
+                    {users.map((u) => {
+                      const isSuperAdmin = u.id === 1;
+                      const isTargetAdmin = u.role === 'admin';
+                      const currentUserIsSuperAdmin = user?.id === 1;
+                      // Can only modify if: not super admin AND (not an admin OR current user is super admin)
+                      const canModify = !isSuperAdmin && (!isTargetAdmin || currentUserIsSuperAdmin);
+                      
+                      return (
                       <TableRow key={u.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -495,7 +519,14 @@ export function Admin() {
                               <AvatarFallback>{u.first_name?.[0]}{u.last_name?.[0]}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{u.first_name} {u.last_name}</p>
+                              <p className="font-medium">
+                                {u.first_name} {u.last_name}
+                                {isSuperAdmin && (
+                                  <Badge variant="default" className="ml-2 bg-yellow-500">
+                                    Super Admin
+                                  </Badge>
+                                )}
+                              </p>
                               {u.nickname && (
                                 <p className="text-sm text-muted-foreground">@{u.nickname}</p>
                               )}
@@ -505,41 +536,95 @@ export function Admin() {
                         <TableCell>{u.email}</TableCell>
                         <TableCell>{u.city || '—'}</TableCell>
                         <TableCell>
-                          <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                            {u.role}
+                          <Badge variant={u.role === 'admin' ? 'default' : u.role === 'moderator' ? 'outline' : 'secondary'}>
+                            {u.role === 'moderator' ? 'Moderator' : u.role}
                           </Badge>
+                          {u.is_banned && (
+                            <Badge variant="destructive" className="ml-2">
+                              Banned
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(u.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            {u.id !== user?.id && (
+                            {u.id !== user?.id && canModify && (
                               <>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" title="Change Role">
-                                      <UserCog className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Change User Role</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Change the role for {u.first_name} {u.last_name}
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
+                                {isFullAdmin && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" title="Change Role">
+                                        <UserCog className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Change User Role</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Change the role for {u.first_name} {u.last_name}
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <div className="py-4">
+                                        <Select
+                                          defaultValue={u.role}
+                                          onValueChange={(value) => updateUserRole(u.id, value)}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select role" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                          <SelectItem value="user">User</SelectItem>
+                                          <SelectItem value="moderator">Moderator</SelectItem>
+                                          <SelectItem value="admin">Admin</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => updateUserRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
-                                      >
-                                        Make {u.role === 'admin' ? 'User' : 'Admin'}
-                                      </AlertDialogAction>
+                                      <AlertDialogCancel>Close</AlertDialogCancel>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
+                                )}
 
+                                {isFullAdmin && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        title={u.is_banned ? "Unban User" : "Ban User"}
+                                      >
+                                        <Ban className={`h-4 w-4 ${u.is_banned ? 'text-green-600' : 'text-orange-600'}`} />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          {u.is_banned ? 'Unban User' : 'Ban User'}
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          {u.is_banned
+                                            ? `Are you sure you want to unban ${u.first_name} ${u.last_name}? They will regain full access.`
+                                            : `Are you sure you want to ban ${u.first_name} ${u.last_name}? They will only be able to browse books.`
+                                          }
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => toggleBanUser(u.id, !u.is_banned)}
+                                          className={u.is_banned ? '' : 'bg-orange-600 hover:bg-orange-700'}
+                                        >
+                                          {u.is_banned ? 'Unban' : 'Ban'}
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+
+                                {isFullAdmin && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" title="Delete User">
@@ -565,15 +650,20 @@ export function Admin() {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
+                                )}
                               </>
                             )}
                             {u.id === user?.id && (
                               <span className="text-xs text-muted-foreground px-2">(You)</span>
                             )}
+                            {!canModify && u.id !== user?.id && (
+                              <span className="text-xs text-muted-foreground px-2">Protected</span>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                    })}
                   </TableBody>
                 </Table>
               )}

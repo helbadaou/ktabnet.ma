@@ -17,14 +17,15 @@ import (
 )
 
 type BookHandler struct {
-	Service      *services.BookService
-	Session      *services.SessionService
-	NotifService *services.NotificationService
-	Hub          *hub.Hub
+	Service        *services.BookService
+	Session        *services.SessionService
+	NotifService   *services.NotificationService
+	Hub            *hub.Hub
+	ProfileService *services.ProfileService
 }
 
-func NewBookHandler(service *services.BookService, session *services.SessionService, notifService *services.NotificationService, hub *hub.Hub) *BookHandler {
-	return &BookHandler{Service: service, Session: session, NotifService: notifService, Hub: hub}
+func NewBookHandler(service *services.BookService, session *services.SessionService, notifService *services.NotificationService, hub *hub.Hub, profileService *services.ProfileService) *BookHandler {
+	return &BookHandler{Service: service, Session: session, NotifService: notifService, Hub: hub, ProfileService: profileService}
 }
 
 func (h *BookHandler) BooksHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +43,12 @@ func (h *BookHandler) CreateBookHandler(w http.ResponseWriter, r *http.Request) 
 	userID, ok := h.Session.GetUserIDFromSession(w, r)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is banned
+	if h.ProfileService != nil && h.ProfileService.IsBanned(userID) {
+		http.Error(w, "You are banned and cannot add books", http.StatusForbidden)
 		return
 	}
 
@@ -244,6 +251,12 @@ func (h *BookHandler) ExchangeBookHandler(w http.ResponseWriter, r *http.Request
 	userID, ok := h.Session.GetUserIDFromSession(w, r)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is banned
+	if h.ProfileService != nil && h.ProfileService.IsBanned(userID) {
+		http.Error(w, "You are banned and cannot exchange books", http.StatusForbidden)
 		return
 	}
 

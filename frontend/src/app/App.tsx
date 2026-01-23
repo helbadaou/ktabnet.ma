@@ -32,10 +32,18 @@ function AppContent() {
   console.log(user?.id);        // User ID
   console.log(user?.nickname);  // Username/nickname
   console.log(user?.email);     // Emai
+  const isBanned = Boolean(user?.is_banned);
 
   return (
     <div className="min-h-screen flex flex-col">
       {!loading && user && <Header />}
+      {!loading && user && isBanned && (
+        <div className="border-b bg-amber-50 text-amber-900">
+          <div className="container mx-auto py-2 text-sm">
+            Your account is banned. You can browse books, but messaging and exchanges are disabled.
+          </div>
+        </div>
+      )}
       <main className="flex-1">
         <Routes>
           <Route path="/login" element={<Login />} />

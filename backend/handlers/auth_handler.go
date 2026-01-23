@@ -32,6 +32,8 @@ type responseUser struct {
 	LastName  string `json:"last_name"`
 	Nickname  string `json:"nickname"`
 	Avatar    string `json:"avatar"`
+	Role      string `json:"role"`
+	IsBanned  bool   `json:"is_banned"`
 }
 
 func NewHandler(service *services.AuthService, sessionService *services.SessionService, hub *hub.Hub) *Handler {
@@ -132,6 +134,8 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 			LastName:  user.LastName,
 			Nickname:  user.Nickname,
 			Avatar:    user.Avatar,
+			Role:      user.Role,
+			IsBanned:  user.IsBanned,
 		},
 	}
 

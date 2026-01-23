@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, MessageSquare, PlusCircle, User, Menu, LogOut, Plus, ArrowLeftRight } from 'lucide-react';
+import { BookOpen, MessageSquare, PlusCircle, User, Menu, LogOut, Plus, ArrowLeftRight, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 import { SearchBar } from './SearchBar';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -15,8 +15,9 @@ import { useNotifications } from '../context/NotificationContext';
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, isAdmin, user } = useAuth();
   const { unreadMessageCount } = useNotifications();
+  const isBanned = Boolean(user?.is_banned);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -46,6 +47,9 @@ export function Header() {
 
   const handleAddBook = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBanned) {
+      return;
+    }
     if (!formData.title || !formData.author) {
       alert('Please fill in title and author');
       return;
@@ -114,8 +118,18 @@ export function Header() {
               )}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary ${isActive('/admin') ? 'text-primary' : 'text-muted-foreground'
+                }`}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
           <NotificationBell />
-          <Button onClick={() => setShowAddForm(true)}>
+          <Button onClick={() => !isBanned && setShowAddForm(true)} disabled={isBanned} title={isBanned ? 'Banned users cannot add books' : undefined}>
             <Plus className="w-4 h-4 mr-2" /> Add Book
           </Button>
           <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -153,11 +167,26 @@ export function Header() {
                     </Link>
                   );
                 })}
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className={`flex items-center gap-3 text-sm font-medium transition-colors hover:text-primary ${isActive('/admin') ? 'text-primary' : 'text-muted-foreground'
+                      }`}
+                  >
+                    <Shield className="h-5 w-5" />
+                    Admin Panel
+                  </Link>
+                )}
                 <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-3 text-sm font-medium">
                   <LogOut className="h-5 w-5" />
                   Logout
                 </Button>
-                <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-3 text-sm font-medium">
+                <Button
+                  onClick={() => !isBanned && setShowAddForm(true)}
+                  disabled={isBanned}
+                  title={isBanned ? 'Banned users cannot add books' : undefined}
+                  className="flex items-center gap-3 text-sm font-medium"
+                >
                   <Plus className="h-5 w-5" />
                   Add Book
                 </Button>

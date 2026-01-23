@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../config';
 import { authFetch } from '../utils/api';
 
@@ -30,6 +31,8 @@ interface ExchangeRequest {
 }
 
 export function ExchangeRequests() {
+  const { user } = useAuth();
+  const isBanned = Boolean(user?.is_banned);
   const [requests, setRequests] = useState<ExchangeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
@@ -229,7 +232,8 @@ export function ExchangeRequests() {
                     <Button
                       size="sm"
                       onClick={() => handleUpdateStatus(request.id, 'accepted')}
-                      disabled={updating === request.id}
+                      disabled={isBanned || updating === request.id}
+                      title={isBanned ? 'Banned users cannot accept exchanges' : undefined}
                     >
                       <Check className="w-4 h-4 mr-1" /> Accept
                     </Button>
@@ -237,7 +241,8 @@ export function ExchangeRequests() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleUpdateStatus(request.id, 'declined')}
-                      disabled={updating === request.id}
+                      disabled={isBanned || updating === request.id}
+                      title={isBanned ? 'Banned users cannot decline exchanges' : undefined}
                     >
                       <X className="w-4 h-4 mr-1" /> Decline
                     </Button>
@@ -247,7 +252,8 @@ export function ExchangeRequests() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleCancel(request.id)}
-                    disabled={updating === request.id}
+                    disabled={isBanned || updating === request.id}
+                    title={isBanned ? 'Banned users cannot cancel exchanges' : undefined}
                   >
                     Cancel Request
                   </Button>
@@ -274,6 +280,11 @@ export function ExchangeRequests() {
         <ArrowLeftRight className="w-8 h-8" />
         Exchange Requests
       </h1>
+      {isBanned && (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          Your account is banned. Exchange actions are disabled.
+        </div>
+      )}
 
       <Tabs defaultValue="incoming" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">

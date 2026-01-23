@@ -15,6 +15,7 @@ import { authFetch } from '../utils/api';
 export function Books() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
+  const isBanned = Boolean(currentUser?.is_banned);
   const [feedBooks, setFeedBooks] = useState<Book[]>([]);
   const [myBooks, setMyBooks] = useState<Book[]>([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
@@ -99,6 +100,10 @@ export function Books() {
 
   const handleAddBook = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBanned) {
+      alert('Your account is banned. You can browse books only.');
+      return;
+    }
     if (!formData.title || !formData.author) {
       alert('Please fill in title and author');
       return;
@@ -181,10 +186,13 @@ export function Books() {
         <TabsContent value="my-books" className="mt-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">My Books</h2>
-            <Button onClick={() => setShowAddForm(true)}>
+            <Button onClick={() => !isBanned && setShowAddForm(true)} disabled={isBanned} title={isBanned ? 'Banned users cannot add books' : undefined}>
               <Plus className="w-4 h-4 mr-2" /> Add Book
             </Button>
           </div>
+          {isBanned && (
+            <p className="text-sm text-muted-foreground mb-4">Your account is banned. You can browse books only.</p>
+          )}
 
           {loadingMyBooks ? (
             <div className="text-center text-muted-foreground">Loading books...</div>
