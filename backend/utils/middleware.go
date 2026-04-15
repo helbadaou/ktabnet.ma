@@ -20,6 +20,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 			"http://localhost:5173",
 			"http://127.0.0.1:5173",
 			"https://ktabnet-frontend.fly.dev",
+			"https://ktabnet.dev",
 			allowedOrigin,
 		}
 
