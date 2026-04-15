@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from './components/ui/sonner';
 import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
+import { LandingPage } from './pages/LandingPage';
 import { BookDetail } from './pages/BookDetail';
 import { Books } from './pages/Books';
 import { Messages } from './pages/Messages';
@@ -48,8 +49,8 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/" element={user ? <HomePage /> : <LandingPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<HomePage />} />
             <Route path="/books" element={<Books />} />
             <Route path="/books/:id" element={<BookDetail />} />
             <Route path="/messages" element={<Messages />} />
