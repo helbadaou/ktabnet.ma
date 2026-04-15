@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"social/models"
+	"ktabnet/models"
 )
 
 type SqliteUserRepo struct {

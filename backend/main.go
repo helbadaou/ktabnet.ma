@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"social/db/sqlite"
-	"social/handlers"
-	hubS "social/hub"
-	"social/repositories"
-	"social/services"
-	"social/utils"
+	"ktabnet/db/sqlite"
+	"ktabnet/handlers"
+	hubS "ktabnet/hub"
+	"ktabnet/repositories"
+	"ktabnet/services"
+	"ktabnet/utils"
 )
 
 func main() {

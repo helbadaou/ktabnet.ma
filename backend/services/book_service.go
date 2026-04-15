@@ -1,8 +1,8 @@
 package services
 
 import (
-	"social/models"
-	"social/repositories"
+	"ktabnet/models"
+	"ktabnet/repositories"
 )
 
 type BookService struct {

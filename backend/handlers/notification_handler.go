@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"social/models"
-	"social/services"
+	"ktabnet/models"
+	"ktabnet/services"
 )
 
 type NotificationHandler struct {

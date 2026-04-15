@@ -3,7 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"log"
-	"social/models"
+	"ktabnet/models"
 )
 
 type NotificationRepository struct {

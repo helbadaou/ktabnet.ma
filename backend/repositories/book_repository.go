@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"social/models"
+	"ktabnet/models"
 )
 
 type BookRepository struct {

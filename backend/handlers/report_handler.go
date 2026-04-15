@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"social/models"
-	"social/services"
+	"ktabnet/models"
+	"ktabnet/services"
 )
 
 type ReportHandler struct {

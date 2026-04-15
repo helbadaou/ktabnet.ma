@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"net/http"
-	"social/repositories"
-	"social/utils"
+	"ktabnet/repositories"
+	"ktabnet/utils"
 	"time"
 )
 

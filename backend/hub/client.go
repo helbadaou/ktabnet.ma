@@ -3,7 +3,7 @@ package hub
 import (
 	"encoding/json"
 	"log"
-	"social/models"
+	"ktabnet/models"
 	"time"
 
 	"github.com/gorilla/websocket"

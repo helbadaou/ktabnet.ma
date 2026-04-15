@@ -18,7 +18,7 @@ func init() {
 
 // GetDBPath returns the path for the SQLite database
 func GetDBPath() string {
-	return filepath.Join(DataDir, "social.db") + "?charset=utf8"
+	return filepath.Join(DataDir, "ktabnet.db") + "?charset=utf8"
 }
 
 // GetUploadPath returns the path for uploads

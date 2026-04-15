@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"social/hub"
-	"social/models"
-	"social/services"
-	"social/utils"
+	"ktabnet/hub"
+	"ktabnet/models"
+	"ktabnet/services"
+	"ktabnet/utils"
 )
 
 type ProfileHandler struct {

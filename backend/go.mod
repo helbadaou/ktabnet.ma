@@ -1,4 +1,4 @@
-module social
+module ktabnet
 
 go 1.23.10
 

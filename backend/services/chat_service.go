@@ -3,8 +3,8 @@ package services
 import (
 	"errors"
 
-	"social/models"
-	"social/repositories"
+	"ktabnet/models"
+	"ktabnet/repositories"
 )
 
 type ChatService struct {

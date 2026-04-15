@@ -2,8 +2,8 @@ package services
 
 import (
 	"fmt"
-	"social/models"
-	"social/repositories"
+	"ktabnet/models"
+	"ktabnet/repositories"
 	"time"
 )
 

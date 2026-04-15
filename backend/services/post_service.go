@@ -2,8 +2,8 @@
 package services
 
 import (
-	"social/models"
-	"social/repositories"
+	"ktabnet/models"
+	"ktabnet/repositories"
 	"sort"
 	"time"
 )

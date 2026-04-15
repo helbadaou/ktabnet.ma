@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"social/models"
+	"ktabnet/models"
 )
 
 type ReportRepository struct {

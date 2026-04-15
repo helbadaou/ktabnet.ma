@@ -3,7 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-	"social/models"
+	"ktabnet/models"
 )
 
 type FollowRepository struct {

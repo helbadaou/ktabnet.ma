@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"database/sql"
-	"social/models"
+	"ktabnet/models"
 	"strings"
 )
 

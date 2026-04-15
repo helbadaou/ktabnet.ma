@@ -3,7 +3,7 @@ package hub
 import (
 	"log"
 	"net/http"
-	"social/services"
+	"ktabnet/services"
 
 	"github.com/gorilla/websocket"
 )

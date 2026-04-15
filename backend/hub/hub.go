@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"social/models"
-	"social/services"
+	"ktabnet/models"
+	"ktabnet/services"
 )
 
 type Hub struct {

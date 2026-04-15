@@ -24,7 +24,7 @@ build: build-backend build-frontend
 # Build the backend
 build-backend:
 	@echo "Building backend..."
-	cd backend && go build -o social main.go
+	cd backend && go build -o ktabnet main.go
 
 # Build the frontend
 build-frontend:
@@ -48,7 +48,7 @@ run-parallel:
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -f backend/social
+	rm -f backend/ktabnet
 	rm -rf frontend/dist
 	rm -rf frontend/node_modules
 

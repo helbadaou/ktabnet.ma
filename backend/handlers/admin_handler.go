@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"social/services"
+	"ktabnet/services"
 )
 
 type AdminHandler struct {

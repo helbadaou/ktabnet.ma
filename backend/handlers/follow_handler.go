@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"social/hub"
-	"social/services"
+	"ktabnet/hub"
+	"ktabnet/services"
 	"strconv"
 	"strings"
 )

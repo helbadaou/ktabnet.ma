@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"social/services"
-	"social/utils"
+	"ktabnet/services"
+	"ktabnet/utils"
 )
 
 type PostHandler struct {
